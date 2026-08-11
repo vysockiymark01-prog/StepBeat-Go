@@ -139,7 +139,8 @@
   .back { color: var(--accent); background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 0 16px; text-align: left; }
   .hidden { display: none; }
   .track-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--outline); }
-  .track-row button { border: none; background: none; color: var(--on-variant); font-size: 16px; cursor: pointer; }
+  .track-row button { border: none; background: none; color: var(--on-variant); font-size: 16px; cursor: pointer; margin-left: 10px; }
+  .track-row.editing { background: var(--surface-variant); border-radius: 10px; padding: 10px 8px; }
   .muted { color: var(--on-variant); font-size: 13px; }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   .suggestion-item {
@@ -242,13 +243,14 @@
   <!-- CHECK SAVED PLAYLIST AGAINST A ROUTE -->
   <section id="screen-check" class="hidden">
     <button class="back" data-back="saved">← Назад</button>
-    <h2 id="checkTitle">Проверить плейлист</h2>
+    <h2 id="checkTitle">Изменить маршрут</h2>
+    <p class="muted" id="checkSubtitle" style="margin-top:-10px"></p>
     <div class="card">
       <label>Время пешком, минут</label>
       <input type="number" id="checkMinutes" placeholder="20" min="1">
       <label>Расстояние, км (необязательно)</label>
       <input type="number" id="checkDistance" placeholder="1.6" step="0.1">
-      <button class="primary" id="btnCheckRun">Проверить</button>
+      <button class="primary" id="btnCheckRun">Рассчитать</button>
     </div>
     <div class="card hidden" id="checkResultCard" style="text-align:center">
       <p class="muted" id="checkVerdictLabel"></p>
@@ -508,14 +510,52 @@ function renderTracks(){
   if (state.tracks.length === 0) { box.innerHTML = '<p class="muted">Пока нет треков — добавь первый</p>'; }
   else {
     box.innerHTML = state.tracks.map((t,i) =>
-      `<div class="track-row"><span>${t.name} · ${t.bpm} BPM</span><button data-i="${i}">✕</button></div>`
+      `<div class="track-row${i === editingTrackIndex ? ' editing' : ''}">
+         <span>${t.name} · ${t.bpm} BPM</span>
+         <span>
+           <button data-edit-i="${i}" title="Изменить трек">✎</button>
+           <button data-i="${i}" title="Удалить трек">✕</button>
+         </span>
+       </div>`
     ).join("");
     box.querySelectorAll("button[data-i]").forEach(btn => btn.onclick = () => {
-      state.tracks.splice(+btn.dataset.i, 1); renderTracks();
+      const i = +btn.dataset.i;
+      state.tracks.splice(i, 1);
+      if (editingTrackIndex === i) cancelTrackEdit();
+      else if (editingTrackIndex !== null && editingTrackIndex > i) editingTrackIndex--;
+      renderTracks();
+    });
+    box.querySelectorAll("button[data-edit-i]").forEach(btn => btn.onclick = () => {
+      startTrackEdit(+btn.getAttribute("data-edit-i"));
     });
   }
   document.getElementById("btnPlaylistGo").disabled = state.tracks.length === 0;
   document.getElementById("btnSavePlaylist").disabled = state.tracks.length === 0;
+}
+
+// ---- editing an existing track in place (instead of delete + re-add) ----
+let editingTrackIndex = null;
+const btnAddTrackEl = document.getElementById("btnAddTrack");
+
+function startTrackEdit(i) {
+  editingTrackIndex = i;
+  const t = state.tracks[i];
+  document.getElementById("trackName").value = t.name;
+  document.getElementById("trackBpm").value = t.bpm;
+  document.getElementById("trackSuggestions").innerHTML = "";
+  document.getElementById("trackAutoStatus").textContent = "";
+  btnAddTrackEl.textContent = "Сохранить изменения";
+  renderTracks();
+  document.getElementById("trackName").focus();
+}
+
+function cancelTrackEdit() {
+  editingTrackIndex = null;
+  document.getElementById("trackName").value = "";
+  document.getElementById("trackBpm").value = "";
+  document.getElementById("trackSuggestions").innerHTML = "";
+  document.getElementById("trackAutoStatus").textContent = "";
+  btnAddTrackEl.textContent = "Добавить трек";
 }
 
 // Opens the playlist builder either from the route flow ("route" — pick/build
@@ -553,6 +593,8 @@ function openPlaylistBuilder(origin, existingIndex) {
     backBtn.onclick = () => show("screen-playlistpick");
   }
 
+  editingTrackIndex = null;
+  document.getElementById("btnAddTrack").textContent = "Добавить трек";
   document.getElementById("trackName").value = "";
   document.getElementById("trackBpm").value = "";
   document.getElementById("trackSuggestions").innerHTML = "";
@@ -611,7 +653,7 @@ function renderSavedList() {
       </div>
       <div class="lib-item-actions">
         <button data-edit="${i}">Изменить</button>
-        <button data-check="${i}">Проверить маршрут</button>
+        <button data-check="${i}">Изменить маршрут</button>
       </div>
     `;
     box.appendChild(div);
@@ -621,7 +663,8 @@ function renderSavedList() {
   });
   box.querySelectorAll("button[data-check]").forEach(btn => btn.onclick = () => {
     currentCheckPlaylist = SAVED_PLAYLISTS[+btn.dataset.check];
-    document.getElementById("checkTitle").textContent = `Проверить: ${currentCheckPlaylist.name}`;
+    document.getElementById("checkTitle").textContent = "Изменить маршрут";
+    document.getElementById("checkSubtitle").textContent = `Для плейлиста «${currentCheckPlaylist.name}» — впиши время или километры маршрута`;
     document.getElementById("checkResultCard").classList.add("hidden");
     document.getElementById("checkMinutes").value = "";
     document.getElementById("checkDistance").value = "";
@@ -743,12 +786,18 @@ trackNameInput.addEventListener("input", () => {
 document.getElementById("btnAddTrack").onclick = () => {
   const name = document.getElementById("trackName").value.trim();
   const bpm = +document.getElementById("trackBpm").value;
-  if (name && bpm > 0) {
+  if (!(name && bpm > 0)) return;
+
+  if (editingTrackIndex !== null) {
+    const existing = state.tracks[editingTrackIndex];
+    state.tracks[editingTrackIndex] = { ...existing, name, bpm };
+    cancelTrackEdit();
+  } else {
     state.tracks.push({ name, bpm, durationSeconds: DEFAULT_TRACK_SECONDS });
     document.getElementById("trackName").value = "";
     document.getElementById("trackBpm").value = "";
-    renderTracks();
   }
+  renderTracks();
 };
 document.getElementById("btnPlaylistGo").onclick = () => {
   state.mode = "playlist";
