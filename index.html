@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StepBeat Go — предпросмотр</title>
+<style>
+  :root {
+    --accent: #6E5AF0;
+    --bg: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-variant: #F0EFF4;
+    --on-bg: #1A1A1E;
+    --on-variant: #6B6873;
+    --outline: #E2E1E8;
+  }
+  [data-theme="dark"] {
+    --accent: #9B8CFA;
+    --bg: #121212;
+    --surface: #1C1C1F;
+    --surface-variant: #262629;
+    --on-bg: #F2F2F2;
+    --on-variant: #A6A3AD;
+    --outline: #333338;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--on-bg);
+    transition: background .3s ease, color .3s ease;
+    min-height: 100vh;
+  }
+  .phone {
+    max-width: 420px;
+    margin: 0 auto;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px 90px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  h1 { font-size: 28px; font-weight: 700; margin: 0; }
+  .subtitle { color: var(--on-variant); margin: 4px 0 20px; font-size: 15px; }
+  .theme-toggle {
+    border: 1px solid var(--outline);
+    background: var(--surface);
+    color: var(--on-bg);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .card {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 16px;
+    animation: fadeUp .35s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  label { display: block; font-size: 13px; color: var(--on-variant); margin-bottom: 6px; }
+  input[type=text], input[type=number] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--outline);
+    background: var(--bg);
+    color: var(--on-bg);
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  button.primary {
+    width: 100%;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s ease, opacity .2s ease;
+  }
+  button.primary:disabled { opacity: .4; cursor: default; }
+  button.primary:active:not(:disabled) { transform: scale(.98); }
+  button.ghost {
+    width: 100%;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--outline);
+    background: transparent;
+    color: var(--on-bg);
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .segment { display: flex; background: var(--surface-variant); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
+  .segment button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    border-radius: 9px;
+    font-size: 13px;
+    color: var(--on-variant);
+    cursor: pointer;
+  }
+  .segment button.active { background: var(--surface); color: var(--on-bg); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .mode-card {
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: border-color .2s ease;
+  }
+  .mode-card:hover { border-color: var(--accent); }
+  .mode-card h3 { margin: 0 0 4px; font-size: 17px; }
+  .mode-card p { margin: 0; font-size: 13px; color: var(--on-variant); }
+  .genre-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface); border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer;
+  }
+  .pill { background: var(--surface-variant); color: var(--on-variant); border-radius: 20px; padding: 5px 12px; font-size: 12px; }
+  .result-number { font-size: 56px; font-weight: 700; margin: 6px 0 2px; }
+  .back { color: var(--accent); background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 0 16px; text-align: left; }
+  .hidden { display: none; }
+  .track-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--outline); }
+  .track-row button { border: none; background: none; color: var(--on-variant); font-size: 16px; cursor: pointer; }
+  .muted { color: var(--on-variant); font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+</style>
+</head>
+<body data-theme="light">
+<div class="phone">
+  <header>
+    <h1>StepBeat Go</h1>
+    <button class="theme-toggle" id="themeToggle">🌙 Тёмная</button>
+  </header>
+
+  <!-- HOME -->
+  <section id="screen-home">
+    <p class="subtitle">Сколько бы занял этот путь под нужный темп?</p>
+    <div class="card">
+      <label>Откуда</label>
+      <input type="text" id="origin" placeholder="Дом">
+      <label>Куда</label>
+      <input type="text" id="destination" placeholder="Офис">
+    </div>
+    <div class="card">
+      <div class="segment">
+        <button class="active" data-mode="link" id="segLink">Вставить ссылку</button>
+        <button data-mode="manual" id="segManual">Вписать время</button>
+      </div>
+      <div id="linkBlock">
+        <label>Ссылка на маршрут</label>
+        <input type="text" id="linkInput" placeholder="https://yandex.ru/maps/?rtext=...">
+        <p class="muted" id="linkStatus">Вставь ссылку — попробуем распознать координаты</p>
+      </div>
+      <label>Время пешком, минут</label>
+      <input type="number" id="minutes" placeholder="20" min="1">
+      <label>Расстояние, км (необязательно)</label>
+      <input type="number" id="distance" placeholder="1.6" step="0.1">
+    </div>
+    <button class="primary" id="btnContinue" disabled>Продолжить</button>
+  </section>
+
+  <!-- MODE -->
+  <section id="screen-mode" class="hidden">
+    <button class="back" data-back="home">← Назад</button>
+    <h2>Выбери саундтрек</h2>
+    <div class="mode-card" data-go="genre"><h3>Жанр</h3><p>Выбери стиль музыки — используем его средний темп</p></div>
+    <div class="mode-card" data-go="playlist"><h3>Мой плейлист</h3><p>Впиши названия треков и их темп сам</p></div>
+    <div class="mode-card" data-go="custom"><h3>Свой BPM</h3><p>Введи точный темп вручную</p></div>
+  </section>
+
+  <!-- GENRE -->
+  <section id="screen-genre" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Жанр</h2>
+    <div id="genreList"></div>
+  </section>
+
+  <!-- CUSTOM BPM -->
+  <section id="screen-custom" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Свой BPM</h2>
+    <div class="card" style="text-align:center">
+      <div class="result-number" id="customBpmValue">120</div>
+      <input type="range" min="40" max="220" value="120" id="customBpmSlider">
+    </div>
+    <button class="primary" id="btnCustomGo">Продолжить</button>
+  </section>
+
+  <!-- PLAYLIST -->
+  <section id="screen-playlist" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Плейлист</h2>
+    <div class="card">
+      <label>Название трека и исполнитель</label>
+      <input type="text" id="trackName" placeholder="Blur - Song 2">
+      <div class="row">
+        <input type="number" id="trackBpm" placeholder="BPM">
+        <button class="ghost" id="btnFindTempo" style="flex:0 0 auto; width:auto; padding:12px 16px;">🔍 Найти</button>
+      </div>
+      <button class="primary" id="btnAddTrack">Добавить трек</button>
+    </div>
+    <div id="trackList" class="card"></div>
+    <button class="primary" id="btnPlaylistGo" disabled>Продолжить</button>
+  </section>
+
+  <!-- RESULT -->
+  <section id="screen-result" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Результат</h2>
+    <div class="card" style="text-align:center">
+      <p class="muted" id="resultLabel">—</p>
+      <div class="result-number" id="resultMinutes">0</div>
+      <p>минут под этот саундтрек</p>
+      <p class="muted" id="resultBaseline"></p>
+      <p class="muted" id="resultDistance"></p>
+    </div>
+    <div class="card">
+      <p class="muted" id="resultTracks"></p>
+    </div>
+    <button class="ghost" data-go="home2">Начать заново</button>
+  </section>
+</div>
+
+<script>
+const GENRES = [
+  ["Lo-fi", 80], ["Reggae", 75], ["Ballad", 65], ["Classical", 90],
+  ["R&B", 95], ["Pop", 110], ["Indie rock", 118], ["Funk", 112],
+  ["Disco", 120], ["House", 124], ["Techno", 130], ["Trance", 138],
+  ["Metal", 150], ["Punk", 165], ["Drum & Bass", 170], ["Hardcore", 180]
+];
+const BASE_BPM = 113;
+const BASE_WALK_SPEED_KMH = 5.0;
+const DEFAULT_TRACK_SECONDS = 210;
+
+let state = { originText:"", destText:"", baselineSeconds:0, distanceKm:null, mode:null, chosenGenre:null, customBpm:120, tracks:[] };
+
+// ---- theme ----
+const themeBtn = document.getElementById("themeToggle");
+themeBtn.onclick = () => {
+  const isDark = document.body.getAttribute("data-theme") === "dark";
+  document.body.setAttribute("data-theme", isDark ? "light" : "dark");
+  themeBtn.textContent = isDark ? "🌙 Тёмная" : "☀️ Светлая";
+};
+
+// ---- navigation ----
+function show(id) {
+  document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => show("screen-" + b.dataset.back));
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+  if (b.dataset.go === "home2") { location.reload(); return; }
+  show("screen-" + b.dataset.go);
+});
+
+// ---- home: link vs manual ----
+const segLink = document.getElementById("segLink"), segManual = document.getElementById("segManual");
+const linkBlock = document.getElementById("linkBlock");
+segLink.onclick = () => { segLink.classList.add("active"); segManual.classList.remove("active"); linkBlock.classList.remove("hidden"); };
+segManual.onclick = () => { segManual.classList.add("active"); segLink.classList.remove("active"); linkBlock.classList.add("hidden"); };
+
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371, toRad = d => d*Math.PI/180;
+  const dLat = toRad(lat2-lat1), dLng = toRad(lng2-lng1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function parseRouteLink(text){
+  const m = [...text.matchAll(/(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/g)];
+  if (m.length >= 2) {
+    return { lat1:+m[0][1], lng1:+m[0][2], lat2:+m[1][1], lng2:+m[1][2] };
+  }
+  return null;
+}
+document.getElementById("linkInput").addEventListener("input", e => {
+  const parsed = parseRouteLink(e.target.value);
+  const status = document.getElementById("linkStatus");
+  if (parsed) {
+    const km = haversineKm(parsed.lat1, parsed.lng1, parsed.lat2, parsed.lng2);
+    document.getElementById("distance").value = km.toFixed(1);
+    const estMin = Math.round((km / BASE_WALK_SPEED_KMH) * 60);
+    document.getElementById("minutes").value = estMin;
+    status.textContent = "✓ Ссылка распознана, расстояние ≈ " + km.toFixed(1) + " км";
+  } else if (e.target.value.trim()) {
+    status.textContent = "Не удалось прочитать координаты — впиши время вручную";
+  } else {
+    status.textContent = "Вставь ссылку — попробуем распознать координаты";
+  }
+});
+
+function refreshContinueBtn(){
+  const minutes = parseFloat(document.getElementById("minutes").value);
+  document.getElementById("btnContinue").disabled = !(minutes > 0);
+}
+document.getElementById("minutes").addEventListener("input", refreshContinueBtn);
+
+document.getElementById("btnContinue").onclick = () => {
+  const origin = document.getElementById("origin").value || "Точка A";
+  const dest = document.getElementById("destination").value || "Точка Б";
+  state.originText = origin; state.destText = dest;
+  state.baselineSeconds = Math.round(parseFloat(document.getElementById("minutes").value) * 60);
+  const d = parseFloat(document.getElementById("distance").value);
+  state.distanceKm = isNaN(d) ? null : d;
+  show("screen-mode");
+};
+
+// ---- genre screen ----
+const genreList = document.getElementById("genreList");
+GENRES.forEach(([name, bpm]) => {
+  const div = document.createElement("div");
+  div.className = "genre-item";
+  div.innerHTML = `<span>${name}</span><span class="pill">${bpm} BPM</span>`;
+  div.onclick = () => {
+    state.mode = "genre"; state.chosenGenre = { name, bpm };
+    computeAndShowResult();
+  };
+  genreList.appendChild(div);
+});
+
+// ---- custom bpm ----
+const slider = document.getElementById("customBpmSlider"), sliderVal = document.getElementById("customBpmValue");
+slider.oninput = () => sliderVal.textContent = slider.value;
+document.getElementById("btnCustomGo").onclick = () => {
+  state.mode = "custom"; state.customBpm = +slider.value;
+  computeAndShowResult();
+};
+
+// ---- playlist ----
+function renderTracks(){
+  const box = document.getElementById("trackList");
+  if (state.tracks.length === 0) { box.innerHTML = '<p class="muted">Пока нет треков — добавь первый</p>'; }
+  else {
+    box.innerHTML = state.tracks.map((t,i) =>
+      `<div class="track-row"><span>${t.name} · ${t.bpm} BPM</span><button data-i="${i}">✕</button></div>`
+    ).join("");
+    box.querySelectorAll("button[data-i]").forEach(btn => btn.onclick = () => {
+      state.tracks.splice(+btn.dataset.i, 1); renderTracks();
+    });
+  }
+  document.getElementById("btnPlaylistGo").disabled = state.tracks.length === 0;
+}
+document.getElementById("btnFindTempo").onclick = () => {
+  const name = document.getElementById("trackName").value;
+  if (name.trim()) window.open("https://www.google.com/search?q=" + encodeURIComponent(name + " bpm tempo"), "_blank");
+};
+document.getElementById("btnAddTrack").onclick = () => {
+  const name = document.getElementById("trackName").value.trim();
+  const bpm = +document.getElementById("trackBpm").value;
+  if (name && bpm > 0) {
+    state.tracks.push({ name, bpm, durationSeconds: DEFAULT_TRACK_SECONDS });
+    document.getElementById("trackName").value = "";
+    document.getElementById("trackBpm").value = "";
+    renderTracks();
+  }
+};
+document.getElementById("btnPlaylistGo").onclick = () => {
+  state.mode = "playlist";
+  computeAndShowResult();
+};
+renderTracks();
+
+// ---- calculation (mirrors calc/TempoCalculator.kt) ----
+function timeUnderTempo(baselineSeconds, baseBpm, targetBpm){
+  return Math.max(0, Math.round(baselineSeconds * (baseBpm / targetBpm)));
+}
+function tracksNeeded(walkSeconds, trackSeconds = DEFAULT_TRACK_SECONDS){
+  return trackSeconds > 0 ? Math.ceil(walkSeconds / trackSeconds) : 0;
+}
+function walkWithPlaylist(baselineSeconds, baseBpm, tracks){
+  let progress = 0, elapsed = 0, fullyPlayed = 0;
+  for (const t of tracks) {
+    const progressThis = t.durationSeconds * (t.bpm / baseBpm);
+    if (progress + progressThis >= baselineSeconds) {
+      const remaining = baselineSeconds - progress;
+      const fraction = Math.min(1, Math.max(0, remaining / progressThis));
+      elapsed += t.durationSeconds * fraction;
+      return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed + (fraction > 0 ? 1 : 0) };
+    }
+    progress += progressThis; elapsed += t.durationSeconds; fullyPlayed++;
+  }
+  return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed };
+}
+function formatDuration(totalSeconds){
+  const m = Math.floor(totalSeconds / 60), s = Math.round(totalSeconds % 60);
+  return m > 0 ? `${m} мин ${s} сек` : `${s} сек`;
+}
+
+function computeAndShowResult(){
+  let label, resultSeconds, tracksInfo;
+  if (state.mode === "genre") {
+    label = `${state.chosenGenre.name} · ${state.chosenGenre.bpm} BPM`;
+    resultSeconds = timeUnderTempo(state.baselineSeconds, BASE_BPM, state.chosenGenre.bpm);
+    tracksInfo = `Понадобится треков: ${tracksNeeded(resultSeconds)}`;
+  } else if (state.mode === "custom") {
+    label = `${state.customBpm} BPM`;
+    resultSeconds = timeUnderTempo(state.baselineSeconds, BASE_BPM, state.customBpm);
+    tracksInfo = `Понадобится треков: ${tracksNeeded(resultSeconds)}`;
+  } else {
+    label = "Мой плейлист";
+    const r = walkWithPlaylist(state.baselineSeconds, BASE_BPM, state.tracks);
+    resultSeconds = r.totalSeconds;
+    tracksInfo = `Треков понадобится: ${r.tracksUsedTotal}`;
+  }
+
+  document.getElementById("resultLabel").textContent = `${state.originText} → ${state.destText} · ${label}`;
+  document.getElementById("resultBaseline").textContent = `Обычным шагом: ${formatDuration(state.baselineSeconds)}`;
+  document.getElementById("resultDistance").textContent = state.distanceKm ? `Расстояние: ${state.distanceKm.toFixed(1)} км` : "";
+  document.getElementById("resultTracks").textContent = tracksInfo;
+
+  const minutesEl = document.getElementById("resultMinutes");
+  const target = Math.round(resultSeconds / 60);
+  let current = 0;
+  const step = Math.max(1, Math.ceil(target / 20));
+  minutesEl.textContent = "0";
+  const timer = setInterval(() => {
+    current = Math.min(target, current + step);
+    minutesEl.textContent = current;
+    if (current >= target) clearInterval(timer);
+  }, 25);
+
+  show("screen-result");
+}
+</script>
+</body>
+</html>
