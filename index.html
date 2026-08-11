@@ -142,6 +142,35 @@
   .track-row button { border: none; background: none; color: var(--on-variant); font-size: 16px; cursor: pointer; }
   .muted { color: var(--on-variant); font-size: 13px; }
   input[type=range] { width: 100%; accent-color: var(--accent); }
+  .suggestion-item {
+    padding: 10px 12px;
+    background: var(--surface-variant);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .suggestion-item:hover { background: var(--outline); }
+  .tabbar { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tabbar button {
+    flex: 1;
+    border: none;
+    background: var(--surface-variant);
+    color: var(--on-variant);
+    padding: 11px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .tabbar button.active { background: var(--accent); color: #fff; }
+  .tabbar.hidden { display: none; }
+  .lib-item { background: var(--surface); border-radius: 16px; padding: 16px; margin-bottom: 10px; }
+  .lib-item-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .lib-item-actions button { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--outline); background: transparent; color: var(--on-bg); font-size: 13px; cursor: pointer; }
+  .lib-item-actions button.primary-mini { background: var(--accent); color: #fff; border: none; }
 </style>
 </head>
 <body data-theme="light">
@@ -150,6 +179,11 @@
     <h1>StepBeat Go</h1>
     <button class="theme-toggle" id="themeToggle">🌙 Тёмная</button>
   </header>
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="home">Главная</button>
+    <button class="tab" data-tab="saved">Плейлисты <span id="tabSavedCount"></span></button>
+  </div>
 
   <!-- HOME -->
   <section id="screen-home">
@@ -183,8 +217,44 @@
     <button class="back" data-back="home">← Назад</button>
     <h2>Выбери саундтрек</h2>
     <div class="mode-card" data-go="genre"><h3>Жанр</h3><p>Выбери стиль музыки — используем его средний темп</p></div>
-    <div class="mode-card" data-go="playlist"><h3>Мой плейлист</h3><p>Впиши названия треков и их темп сам</p></div>
+    <div class="mode-card" data-go="songs"><h3>Известные треки</h3><p>Готовый список известных песен с реальным темпом</p></div>
+    <div class="mode-card" data-go="playlistpick"><h3>Мой плейлист <span id="modeSavedCountPill" class="pill"></span></h3><p>Выбери сохранённый плейлист или собери новый</p></div>
     <div class="mode-card" data-go="custom"><h3>Свой BPM</h3><p>Введи точный темп вручную</p></div>
+  </section>
+
+  <!-- PICK A PLAYLIST FOR THIS ROUTE -->
+  <section id="screen-playlistpick" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Мой плейлист</h2>
+    <button class="primary" id="btnNewPlaylistForRoute" style="margin-bottom:16px;">＋ Собрать новый плейлист</button>
+    <p class="muted" id="pickEmptyHint">Сохранённых плейлистов пока нет — собери первый выше</p>
+    <div id="pickList"></div>
+  </section>
+
+  <!-- PLAYLIST LIBRARY (own tab) -->
+  <section id="screen-saved" class="hidden">
+    <h2>Мои плейлисты</h2>
+    <p class="muted" style="margin-top:-10px">Собери плейлист один раз и переиспользуй его для любого маршрута. Сохраняются только пока открыта эта вкладка (в настоящем приложении — навсегда через Room)</p>
+    <button class="primary" id="btnNewPlaylistLibrary" style="margin-bottom:16px;">＋ Новый плейлист</button>
+    <div id="savedList"></div>
+  </section>
+
+  <!-- CHECK SAVED PLAYLIST AGAINST A ROUTE -->
+  <section id="screen-check" class="hidden">
+    <button class="back" data-back="saved">← Назад</button>
+    <h2 id="checkTitle">Проверить плейлист</h2>
+    <div class="card">
+      <label>Время пешком, минут</label>
+      <input type="number" id="checkMinutes" placeholder="20" min="1">
+      <label>Расстояние, км (необязательно)</label>
+      <input type="number" id="checkDistance" placeholder="1.6" step="0.1">
+      <button class="primary" id="btnCheckRun">Проверить</button>
+    </div>
+    <div class="card hidden" id="checkResultCard" style="text-align:center">
+      <p class="muted" id="checkVerdictLabel"></p>
+      <div class="result-number" id="checkMinutesResult">0</div>
+      <p id="checkVerdictText"></p>
+    </div>
   </section>
 
   <!-- GENRE -->
@@ -192,6 +262,15 @@
     <button class="back" data-back="mode">← Назад</button>
     <h2>Жанр</h2>
     <div id="genreList"></div>
+  </section>
+
+  <!-- KNOWN SONGS -->
+  <section id="screen-songs" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Известные треки</h2>
+    <input type="text" id="songSearch" placeholder="Поиск по названию или исполнителю..." style="margin-bottom:14px;">
+    <p class="muted" style="margin-top:-6px">Темп — примерный ориентир, для точного значения используй поиск в разделе «Мой плейлист»</p>
+    <div id="songList"></div>
   </section>
 
   <!-- CUSTOM BPM -->
@@ -205,20 +284,23 @@
     <button class="primary" id="btnCustomGo">Продолжить</button>
   </section>
 
-  <!-- PLAYLIST -->
+  <!-- PLAYLIST BUILDER -->
   <section id="screen-playlist" class="hidden">
-    <button class="back" data-back="mode">← Назад</button>
-    <h2>Плейлист</h2>
+    <button class="back" id="playlistBackBtn">← Назад</button>
+    <h2 id="playlistBuilderTitle">Плейлист</h2>
     <div class="card">
       <label>Название трека и исполнитель</label>
-      <input type="text" id="trackName" placeholder="Blur - Song 2">
+      <input type="text" id="trackName" placeholder="Blur - Song 2" autocomplete="off">
+      <div id="trackSuggestions"></div>
+      <p class="muted" id="trackAutoStatus" style="margin-top:-8px; margin-bottom:14px;"></p>
       <div class="row">
         <input type="number" id="trackBpm" placeholder="BPM">
-        <button class="ghost" id="btnFindTempo" style="flex:0 0 auto; width:auto; padding:12px 16px;">🔍 Найти</button>
+        <button class="ghost" id="btnFindTempo" style="flex:0 0 auto; width:auto; padding:12px 16px;">🔍 Найти вручную</button>
       </div>
       <button class="primary" id="btnAddTrack">Добавить трек</button>
     </div>
     <div id="trackList" class="card"></div>
+    <button class="ghost" id="btnSavePlaylist" disabled>Сохранить плейлист</button>
     <button class="primary" id="btnPlaylistGo" disabled>Продолжить</button>
   </section>
 
@@ -251,7 +333,43 @@ const BASE_BPM = 113;
 const BASE_WALK_SPEED_KMH = 5.0;
 const DEFAULT_TRACK_SECONDS = 210;
 
-let state = { originText:"", destText:"", baselineSeconds:0, distanceKm:null, mode:null, chosenGenre:null, customBpm:120, tracks:[] };
+// Approximate reference tempos for well-known tracks - illustrative, not
+// pulled from any API. If you need an exact value, use "Найти" in the
+// playlist screen to check it yourself.
+const SONGS = [
+  ["Blinding Lights", "The Weeknd", 171],
+  ["Uptown Funk", "Bruno Mars", 115],
+  ["Billie Jean", "Michael Jackson", 117],
+  ["Sweet Child O' Mine", "Guns N' Roses", 125],
+  ["Don't Stop Believin'", "Journey", 119],
+  ["Shape of You", "Ed Sheeran", 96],
+  ["One More Time", "Daft Punk", 123],
+  ["Levels", "Avicii", 126],
+  ["Smells Like Teen Spirit", "Nirvana", 117],
+  ["Get Lucky", "Daft Punk", 116],
+  ["Rolling in the Deep", "Adele", 105],
+  ["Can't Stop the Feeling!", "Justin Timberlake", 113],
+  ["Thunderstruck", "AC/DC", 133],
+  ["Eye of the Tiger", "Survivor", 109],
+  ["Blue (Da Ba Dee)", "Eiffel 65", 125],
+  ["Around the World", "Daft Punk", 121],
+  ["Titanium", "David Guetta ft. Sia", 126],
+  ["Wake Me Up", "Avicii", 124],
+  ["I Gotta Feeling", "Black Eyed Peas", 128],
+  ["Levitating", "Dua Lipa", 103],
+  ["As It Was", "Harry Styles", 174],
+  ["Physical", "Dua Lipa", 146],
+  ["Bad Guy", "Billie Eilish", 135],
+  ["Don't Start Now", "Dua Lipa", 124]
+];
+
+let state = { originText:"", destText:"", baselineSeconds:0, distanceKm:null, mode:null, chosenGenre:null, chosenSong:null, customBpm:120, tracks:[], playlistOrigin:"route", libraryEditIndex:null, playlistName:"" };
+
+// In-memory only - browser storage (localStorage) isn't available in this
+// artifact environment, so saved playlists live only for this tab session.
+// In the real Android app these persist permanently via Room.
+let SAVED_PLAYLISTS = [];
+let currentCheckPlaylist = null;
 
 // ---- theme ----
 const themeBtn = document.getElementById("themeToggle");
@@ -262,15 +380,28 @@ themeBtn.onclick = () => {
 };
 
 // ---- navigation ----
+const TOP_LEVEL_SCREENS = { "screen-home": "home", "screen-saved": "saved" };
 function show(id) {
   document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
+  if (id === "screen-saved") renderSavedList();
+  if (id === "screen-playlistpick") renderPickList();
+
+  const tabbar = document.getElementById("tabbar");
+  const topLevelTab = TOP_LEVEL_SCREENS[id];
+  if (topLevelTab) {
+    tabbar.classList.remove("hidden");
+    document.querySelectorAll(".tabbar .tab").forEach(t => t.classList.toggle("active", t.dataset.tab === topLevelTab));
+  } else {
+    tabbar.classList.add("hidden");
+  }
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => show("screen-" + b.dataset.back));
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
   if (b.dataset.go === "home2") { location.reload(); return; }
   show("screen-" + b.dataset.go);
 });
+document.querySelectorAll(".tabbar .tab").forEach(t => t.onclick = () => show("screen-" + t.dataset.tab));
 
 // ---- home: link vs manual ----
 const segLink = document.getElementById("segLink"), segManual = document.getElementById("segManual");
@@ -336,6 +467,33 @@ GENRES.forEach(([name, bpm]) => {
   genreList.appendChild(div);
 });
 
+// ---- known songs ----
+const songList = document.getElementById("songList");
+function renderSongs(filter = "") {
+  const q = filter.trim().toLowerCase();
+  const filtered = SONGS.filter(([name, artist]) =>
+    !q || name.toLowerCase().includes(q) || artist.toLowerCase().includes(q)
+  );
+  songList.innerHTML = "";
+  if (filtered.length === 0) {
+    songList.innerHTML = '<p class="muted">Ничего не нашлось — попробуй другой запрос или добавь трек вручную в разделе «Мой плейлист»</p>';
+    return;
+  }
+  filtered.forEach(([name, artist, bpm]) => {
+    const div = document.createElement("div");
+    div.className = "genre-item";
+    div.innerHTML = `<span>${name}<br><span class="muted">${artist}</span></span><span class="pill">${bpm} BPM</span>`;
+    div.onclick = () => {
+      state.mode = "song";
+      state.chosenSong = { name, artist, bpm };
+      computeAndShowResult();
+    };
+    songList.appendChild(div);
+  });
+}
+renderSongs();
+document.getElementById("songSearch").addEventListener("input", e => renderSongs(e.target.value));
+
 // ---- custom bpm ----
 const slider = document.getElementById("customBpmSlider"), sliderVal = document.getElementById("customBpmValue");
 slider.oninput = () => sliderVal.textContent = slider.value;
@@ -344,7 +502,7 @@ document.getElementById("btnCustomGo").onclick = () => {
   computeAndShowResult();
 };
 
-// ---- playlist ----
+// ---- playlist builder ----
 function renderTracks(){
   const box = document.getElementById("trackList");
   if (state.tracks.length === 0) { box.innerHTML = '<p class="muted">Пока нет треков — добавь первый</p>'; }
@@ -357,11 +515,231 @@ function renderTracks(){
     });
   }
   document.getElementById("btnPlaylistGo").disabled = state.tracks.length === 0;
+  document.getElementById("btnSavePlaylist").disabled = state.tracks.length === 0;
 }
+
+// Opens the playlist builder either from the route flow ("route" — pick/build
+// a playlist to size against the current route) or from the standalone
+// "Плейлисты" tab ("library" — build/edit a reusable playlist, no route
+// context needed). `existingIndex` is set when editing an already-saved
+// playlist, so tracks/name are preloaded and Save updates it in place
+// instead of creating a duplicate.
+function openPlaylistBuilder(origin, existingIndex) {
+  state.playlistOrigin = origin;
+  state.libraryEditIndex = (existingIndex === undefined) ? null : existingIndex;
+  if (state.libraryEditIndex !== null) {
+    const pl = SAVED_PLAYLISTS[state.libraryEditIndex];
+    state.tracks = pl.tracks.map(t => ({ ...t }));
+    state.playlistName = pl.name;
+  } else {
+    state.tracks = [];
+    state.playlistName = "";
+  }
+
+  const title = document.getElementById("playlistBuilderTitle");
+  const goBtn = document.getElementById("btnPlaylistGo");
+  const saveBtn = document.getElementById("btnSavePlaylist");
+  const backBtn = document.getElementById("playlistBackBtn");
+
+  if (origin === "library") {
+    title.textContent = state.libraryEditIndex !== null ? "Изменить плейлист" : "Новый плейлист";
+    goBtn.classList.add("hidden");
+    saveBtn.textContent = "Сохранить и вернуться в библиотеку";
+    backBtn.onclick = () => show("screen-saved");
+  } else {
+    title.textContent = "Плейлист для маршрута";
+    goBtn.classList.remove("hidden");
+    saveBtn.textContent = "Сохранить плейлист";
+    backBtn.onclick = () => show("screen-playlistpick");
+  }
+
+  document.getElementById("trackName").value = "";
+  document.getElementById("trackBpm").value = "";
+  document.getElementById("trackSuggestions").innerHTML = "";
+  document.getElementById("trackAutoStatus").textContent = "";
+  renderTracks();
+  show("screen-playlist");
+}
+
+document.getElementById("btnNewPlaylistForRoute").onclick = () => openPlaylistBuilder("route", null);
+document.getElementById("btnNewPlaylistLibrary").onclick = () => openPlaylistBuilder("library", null);
+
+// ---- saved playlists (library) ----
+function updateSavedCountPill() {
+  const count = SAVED_PLAYLISTS.length ? String(SAVED_PLAYLISTS.length) : "";
+  document.getElementById("tabSavedCount").textContent = count;
+  const modePill = document.getElementById("modeSavedCountPill");
+  modePill.textContent = SAVED_PLAYLISTS.length;
+  modePill.style.display = SAVED_PLAYLISTS.length ? "inline-block" : "none";
+}
+updateSavedCountPill();
+
+document.getElementById("btnSavePlaylist").onclick = () => {
+  const defaultName = state.playlistName || `Плейлист ${SAVED_PLAYLISTS.length + 1}`;
+  const name = prompt("Название плейлиста:", defaultName);
+  if (name === null) return;
+  const finalName = name.trim() || defaultName;
+  if (state.libraryEditIndex !== null) {
+    SAVED_PLAYLISTS[state.libraryEditIndex] = { name: finalName, tracks: state.tracks.slice() };
+  } else {
+    SAVED_PLAYLISTS.push({ name: finalName, tracks: state.tracks.slice() });
+  }
+  state.playlistName = finalName;
+  updateSavedCountPill();
+  if (state.playlistOrigin === "library") {
+    show("screen-saved");
+  } else {
+    alert(`Сохранено: «${finalName}» (${state.tracks.length} треков)`);
+  }
+};
+
+function renderSavedList() {
+  const box = document.getElementById("savedList");
+  if (SAVED_PLAYLISTS.length === 0) {
+    box.innerHTML = '<p class="muted">Пока нет сохранённых плейлистов — нажми «＋ Новый плейлист» выше, чтобы собрать первый один раз и переиспользовать его для любых маршрутов</p>';
+    return;
+  }
+  box.innerHTML = "";
+  SAVED_PLAYLISTS.forEach((pl, i) => {
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    const avgBpm = Math.round(pl.tracks.reduce((s, t) => s + t.bpm, 0) / pl.tracks.length);
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} треков · средний темп ~${avgBpm} BPM</span></div>
+        <button data-del="${i}" style="border:none;background:none;color:var(--on-variant);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <div class="lib-item-actions">
+        <button data-edit="${i}">Изменить</button>
+        <button data-check="${i}">Проверить маршрут</button>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+  box.querySelectorAll("button[data-edit]").forEach(btn => btn.onclick = () => {
+    openPlaylistBuilder("library", +btn.dataset.edit);
+  });
+  box.querySelectorAll("button[data-check]").forEach(btn => btn.onclick = () => {
+    currentCheckPlaylist = SAVED_PLAYLISTS[+btn.dataset.check];
+    document.getElementById("checkTitle").textContent = `Проверить: ${currentCheckPlaylist.name}`;
+    document.getElementById("checkResultCard").classList.add("hidden");
+    document.getElementById("checkMinutes").value = "";
+    document.getElementById("checkDistance").value = "";
+    show("screen-check");
+  });
+  box.querySelectorAll("button[data-del]").forEach(btn => btn.onclick = () => {
+    SAVED_PLAYLISTS.splice(+btn.dataset.del, 1);
+    updateSavedCountPill();
+    renderSavedList();
+  });
+}
+
+// ---- pick a saved playlist for the current route ----
+function renderPickList() {
+  const box = document.getElementById("pickList");
+  const hint = document.getElementById("pickEmptyHint");
+  if (SAVED_PLAYLISTS.length === 0) {
+    box.innerHTML = "";
+    hint.classList.remove("hidden");
+    return;
+  }
+  hint.classList.add("hidden");
+  box.innerHTML = "";
+  SAVED_PLAYLISTS.forEach((pl, i) => {
+    const avgBpm = Math.round(pl.tracks.reduce((s, t) => s + t.bpm, 0) / pl.tracks.length);
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    div.innerHTML = `
+      <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} треков · средний темп ~${avgBpm} BPM</span></div>
+      <div class="lib-item-actions">
+        <button class="primary-mini" data-use="${i}">Использовать для этого маршрута</button>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+  box.querySelectorAll("button[data-use]").forEach(btn => btn.onclick = () => {
+    const pl = SAVED_PLAYLISTS[+btn.dataset.use];
+    state.mode = "playlist";
+    state.tracks = pl.tracks.map(t => ({ ...t }));
+    state.playlistName = pl.name;
+    state.libraryEditIndex = null;
+    computeAndShowResult();
+  });
+}
+
+document.getElementById("btnCheckRun").onclick = () => {
+  const minutes = parseFloat(document.getElementById("checkMinutes").value);
+  if (!(minutes > 0) || !currentCheckPlaylist) return;
+  const baselineSeconds = Math.round(minutes * 60);
+  const r = walkWithPlaylist(baselineSeconds, BASE_BPM, currentCheckPlaylist.tracks);
+
+  document.getElementById("checkResultCard").classList.remove("hidden");
+  document.getElementById("checkMinutesResult").textContent = Math.round(r.totalSeconds / 60);
+  document.getElementById("checkVerdictLabel").textContent = currentCheckPlaylist.name;
+
+  const verdict = document.getElementById("checkVerdictText");
+  if (r.covered) {
+    verdict.textContent = `✓ Этого плейлиста хватит — ${r.tracksUsedTotal} треков покроют маршрут`;
+    verdict.style.color = "var(--accent)";
+  } else {
+    const shortfallMin = Math.ceil(r.shortfallSeconds / 60);
+    verdict.textContent = `⚠ Плейлиста не хватит — все ${r.tracksUsedTotal} треков доиграют, а маршрут ещё продлится ~${shortfallMin} мин (нужно повторить плейлист или добавить треки)`;
+    verdict.style.color = "#FF9F0A";
+  }
+};
 document.getElementById("btnFindTempo").onclick = () => {
   const name = document.getElementById("trackName").value;
   if (name.trim()) window.open("https://www.google.com/search?q=" + encodeURIComponent(name + " bpm tempo"), "_blank");
 };
+
+// Auto-fill BPM from the built-in known-songs list as the user types, so
+// most popular tracks don't need the manual "Найти" search at all.
+const trackNameInput = document.getElementById("trackName");
+const trackBpmInput = document.getElementById("trackBpm");
+const trackSuggestionsBox = document.getElementById("trackSuggestions");
+const trackAutoStatus = document.getElementById("trackAutoStatus");
+
+function findExactSongMatch(query) {
+  const q = query.trim().toLowerCase();
+  return SONGS.find(([name, artist]) => `${name} - ${artist}`.toLowerCase() === q || name.toLowerCase() === q);
+}
+
+trackNameInput.addEventListener("input", () => {
+  const query = trackNameInput.value.trim();
+  trackAutoStatus.textContent = "";
+  if (!query) { trackSuggestionsBox.innerHTML = ""; return; }
+
+  const exact = findExactSongMatch(query);
+  if (exact) {
+    trackBpmInput.value = exact[2];
+    trackAutoStatus.textContent = `✓ Темп найден в базе: ${exact[2]} BPM`;
+    trackSuggestionsBox.innerHTML = "";
+    return;
+  }
+
+  const q = query.toLowerCase();
+  const matches = SONGS.filter(([name, artist]) =>
+    name.toLowerCase().includes(q) || artist.toLowerCase().includes(q)
+  ).slice(0, 5);
+
+  trackSuggestionsBox.innerHTML = matches.map(([name, artist, bpm]) =>
+    `<div class="suggestion-item" data-name="${name}" data-artist="${artist}" data-bpm="${bpm}"><span>${name} — ${artist}</span><span>${bpm} BPM</span></div>`
+  ).join("");
+
+  trackSuggestionsBox.querySelectorAll(".suggestion-item").forEach(item => {
+    item.onclick = () => {
+      trackNameInput.value = `${item.dataset.name} - ${item.dataset.artist}`;
+      trackBpmInput.value = item.dataset.bpm;
+      trackAutoStatus.textContent = `✓ Темп найден в базе: ${item.dataset.bpm} BPM`;
+      trackSuggestionsBox.innerHTML = "";
+    };
+  });
+
+  if (matches.length === 0) {
+    trackAutoStatus.textContent = "Трека нет в базе — впиши темп сам или нажми «Найти вручную»";
+  }
+});
+
 document.getElementById("btnAddTrack").onclick = () => {
   const name = document.getElementById("trackName").value.trim();
   const bpm = +document.getElementById("trackBpm").value;
@@ -393,11 +771,14 @@ function walkWithPlaylist(baselineSeconds, baseBpm, tracks){
       const remaining = baselineSeconds - progress;
       const fraction = Math.min(1, Math.max(0, remaining / progressThis));
       elapsed += t.durationSeconds * fraction;
-      return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed + (fraction > 0 ? 1 : 0) };
+      return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed + (fraction > 0 ? 1 : 0), covered: true };
     }
     progress += progressThis; elapsed += t.durationSeconds; fullyPlayed++;
   }
-  return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed };
+  // Playlist ran out before covering the route - it doesn't reach the
+  // destination at this tempo, would need to repeat or add more tracks.
+  const shortfallSeconds = Math.max(0, Math.round(baselineSeconds - progress));
+  return { totalSeconds: Math.round(elapsed), tracksUsedTotal: fullyPlayed, covered: false, shortfallSeconds };
 }
 function formatDuration(totalSeconds){
   const m = Math.floor(totalSeconds / 60), s = Math.round(totalSeconds % 60);
@@ -410,6 +791,10 @@ function computeAndShowResult(){
     label = `${state.chosenGenre.name} · ${state.chosenGenre.bpm} BPM`;
     resultSeconds = timeUnderTempo(state.baselineSeconds, BASE_BPM, state.chosenGenre.bpm);
     tracksInfo = `Понадобится треков: ${tracksNeeded(resultSeconds)}`;
+  } else if (state.mode === "song") {
+    label = `${state.chosenSong.name} — ${state.chosenSong.artist} · ${state.chosenSong.bpm} BPM`;
+    resultSeconds = timeUnderTempo(state.baselineSeconds, BASE_BPM, state.chosenSong.bpm);
+    tracksInfo = `Понадобится повторов трека: ${tracksNeeded(resultSeconds)}`;
   } else if (state.mode === "custom") {
     label = `${state.customBpm} BPM`;
     resultSeconds = timeUnderTempo(state.baselineSeconds, BASE_BPM, state.customBpm);
