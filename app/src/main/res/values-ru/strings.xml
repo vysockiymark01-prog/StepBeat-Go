@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">StepBeat Go</string>
+
+    <!-- Главный экран -->
+    <string name="home_title">StepBeat Go</string>
+    <string name="home_subtitle">Сколько бы занял этот путь под нужный темп?</string>
+    <string name="home_route_label">Маршрут</string>
+    <string name="home_route_hint">например, Дом → Офис</string>
+    <string name="home_input_mode_link">Вставить ссылку на маршрут</string>
+    <string name="home_input_mode_manual">Вписать время самому</string>
+    <string name="home_link_field_hint">Вставь ссылку, скопированную из Карт</string>
+    <string name="home_link_paste_button">Вставить из буфера обмена</string>
+    <string name="home_link_parsed_ok">Ссылка на маршрут распознана</string>
+    <string name="home_link_parsed_fail">Не удалось прочитать координаты из этой ссылки — впиши время вручную</string>
+    <string name="home_manual_time_hint">Время пешком, которое показали Карты, минут</string>
+    <string name="home_open_maps">Открыть в Картах</string>
+    <string name="home_open_maps_sheet_title">Выбери приложение карт</string>
+    <string name="home_continue">Продолжить</string>
+    <string name="home_distance_optional">Расстояние (необязательно, км)</string>
+
+    <!-- Выбор режима -->
+    <string name="mode_title">Выбери саундтрек</string>
+    <string name="mode_genre">Жанр</string>
+    <string name="mode_genre_desc">Выбери стиль музыки — используем его средний темп</string>
+    <string name="mode_playlist">Мой плейлист</string>
+    <string name="mode_playlist_desc">Впиши названия треков и их темп сам</string>
+    <string name="mode_custom_bpm">Свой BPM</string>
+    <string name="mode_custom_bpm_desc">Введи точный темп</string>
+
+    <!-- Жанр -->
+    <string name="genre_title">Жанр</string>
+    <string name="genre_bpm_format">%1$d BPM</string>
+    <string name="genre_compare_all">Сравнить все жанры</string>
+
+    <!-- Плейлист -->
+    <string name="playlist_title">Плейлист</string>
+    <string name="playlist_new">Новый плейлист</string>
+    <string name="playlist_name_hint">Название плейлиста</string>
+    <string name="playlist_add_track">Добавить трек</string>
+    <string name="playlist_track_name_hint">Название трека и исполнитель</string>
+    <string name="playlist_track_bpm_hint">Темп, BPM</string>
+    <string name="playlist_find_tempo">Узнать темп</string>
+    <string name="playlist_find_tempo_help">Откроет поиск в браузере по этому треку — прочитай число и впиши его</string>
+    <string name="playlist_empty">Пока нет треков — добавь первый</string>
+    <string name="playlist_track_count_format">Понадобится треков: %1$d</string>
+    <string name="playlist_save">Сохранить плейлист</string>
+    <string name="playlist_delete_track">Удалить трек</string>
+
+    <!-- Результат -->
+    <string name="result_title">Результат</string>
+    <string name="result_time_format">%1$s под этот саундтрек</string>
+    <string name="result_baseline_format">Обычным шагом: %1$s</string>
+    <string name="result_distance_format">Расстояние: %1$.1f км</string>
+    <string name="result_save_favorite">Сохранить в избранное</string>
+    <string name="result_saved_favorite">Сохранено в избранное</string>
+    <string name="result_share">Поделиться</string>
+    <string name="result_share_text_format">%1$s — этот путь займёт %2$s под %3$s в StepBeat Go</string>
+    <string name="result_open_metronome">Идти под клик-трек</string>
+    <string name="result_breakdown_title">По трекам</string>
+
+    <!-- Избранное -->
+    <string name="favorites_title">Избранное</string>
+    <string name="favorites_empty">Сохрани маршрут, чтобы найти его здесь позже</string>
+    <string name="favorites_delete">Удалить</string>
+
+    <!-- История -->
+    <string name="history_title">История</string>
+    <string name="history_empty">Здесь появятся твои прошлые расчёты</string>
+    <string name="history_clear">Очистить историю</string>
+
+    <!-- Настройки -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_theme">Оформление</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_units">Единицы измерения</string>
+    <string name="settings_units_km">Километры</string>
+    <string name="settings_units_mi">Мили</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_system">Системный</string>
+    <string name="settings_pace_title">Твой обычный темп ходьбы</string>
+    <string name="settings_pace_desc">Используется как базовый темп — тот, что закладывают карты для обычной прогулки</string>
+    <string name="settings_pace_bpm_format">%1$d шагов / мин</string>
+    <string name="settings_pace_reset">Сбросить на значение по умолчанию (113)</string>
+    <string name="settings_default_maps_app">Предпочитаемое приложение карт</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_privacy_note">StepBeat Go не делает собственных сетевых запросов. Открытие маршрутов и поиск темпа происходят прямо в твоём браузере или картах — мы ничего не получаем.</string>
+
+    <!-- Достижения -->
+    <string name="achievements_title">Достижения</string>
+    <string name="achievements_first_route">Первые шаги — рассчитан первый маршрут</string>
+    <string name="achievements_five_routes">Разогнался — рассчитано 5 маршрутов</string>
+    <string name="achievements_all_genres">Исследователь жанров — опробованы все встроенные жанры</string>
+    <string name="achievements_first_playlist">Куратор — собран первый плейлист</string>
+
+    <!-- Метроном -->
+    <string name="metronome_title">Клик-трек</string>
+    <string name="metronome_bpm_format">%1$d BPM</string>
+    <string name="metronome_start">Начать</string>
+    <string name="metronome_stop">Остановить</string>
+
+    <!-- Общее -->
+    <string name="action_save">Сохранить</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_edit">Изменить</string>
+    <string name="action_back">Назад</string>
+    <string name="nav_home">Главная</string>
+    <string name="nav_favorites">Избранное</string>
+    <string name="nav_history">История</string>
+    <string name="nav_settings">Настройки</string>
+</resources>

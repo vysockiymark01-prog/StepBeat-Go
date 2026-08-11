@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">StepBeat Go</string>
+
+    <!-- Home -->
+    <string name="home_title">StepBeat Go</string>
+    <string name="home_subtitle">How long would this walk take to the beat?</string>
+    <string name="home_route_label">Route</string>
+    <string name="home_route_hint">e.g. Home → Office</string>
+    <string name="home_input_mode_link">Paste route link</string>
+    <string name="home_input_mode_manual">Enter time myself</string>
+    <string name="home_link_field_hint">Paste a link copied from Maps</string>
+    <string name="home_link_paste_button">Paste from clipboard</string>
+    <string name="home_link_parsed_ok">Route link recognized</string>
+    <string name="home_link_parsed_fail">Could not read coordinates from this link — enter the time manually instead</string>
+    <string name="home_manual_time_hint">Walking time shown by Maps, minutes</string>
+    <string name="home_open_maps">Open in Maps</string>
+    <string name="home_open_maps_sheet_title">Choose a maps app</string>
+    <string name="home_continue">Continue</string>
+    <string name="home_distance_optional">Distance (optional, km)</string>
+
+    <!-- Mode: genre vs playlist -->
+    <string name="mode_title">Choose the soundtrack</string>
+    <string name="mode_genre">Genre</string>
+    <string name="mode_genre_desc">Pick a music style, we use its average tempo</string>
+    <string name="mode_playlist">My playlist</string>
+    <string name="mode_playlist_desc">Add track names and their tempo yourself</string>
+    <string name="mode_custom_bpm">Custom BPM</string>
+    <string name="mode_custom_bpm_desc">Enter an exact tempo</string>
+
+    <!-- Genre -->
+    <string name="genre_title">Genre</string>
+    <string name="genre_bpm_format">%1$d BPM</string>
+    <string name="genre_compare_all">Compare all genres</string>
+
+    <!-- Playlist -->
+    <string name="playlist_title">Playlist</string>
+    <string name="playlist_new">New playlist</string>
+    <string name="playlist_name_hint">Playlist name</string>
+    <string name="playlist_add_track">Add track</string>
+    <string name="playlist_track_name_hint">Track name and artist</string>
+    <string name="playlist_track_bpm_hint">Tempo, BPM</string>
+    <string name="playlist_find_tempo">Find tempo</string>
+    <string name="playlist_find_tempo_help">Opens a web search for this track\'s tempo — read the number and type it in</string>
+    <string name="playlist_empty">No tracks yet — add the first one</string>
+    <string name="playlist_track_count_format">%1$d tracks needed</string>
+    <string name="playlist_save">Save playlist</string>
+    <string name="playlist_delete_track">Remove track</string>
+
+    <!-- Result -->
+    <string name="result_title">Result</string>
+    <string name="result_time_format">%1$s under this soundtrack</string>
+    <string name="result_baseline_format">Normal walking pace: %1$s</string>
+    <string name="result_distance_format">Distance: %1$.1f km</string>
+    <string name="result_save_favorite">Save to favorites</string>
+    <string name="result_saved_favorite">Saved to favorites</string>
+    <string name="result_share">Share</string>
+    <string name="result_share_text_format">%1$s — this walk takes %2$s to the beat of %3$s in StepBeat Go</string>
+    <string name="result_open_metronome">Walk to a click track</string>
+    <string name="result_breakdown_title">Per track</string>
+
+    <!-- Favorites -->
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty">Save a route to find it here later</string>
+    <string name="favorites_delete">Remove</string>
+
+    <!-- History -->
+    <string name="history_title">History</string>
+    <string name="history_empty">Your past calculations will show up here</string>
+    <string name="history_clear">Clear history</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme">Appearance</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_units">Units</string>
+    <string name="settings_units_km">Kilometers</string>
+    <string name="settings_units_mi">Miles</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_pace_title">Your normal walking pace</string>
+    <string name="settings_pace_desc">Used as the baseline tempo — the pace maps assume for a regular walk</string>
+    <string name="settings_pace_bpm_format">%1$d steps / min</string>
+    <string name="settings_pace_reset">Reset to default (113)</string>
+    <string name="settings_default_maps_app">Preferred maps app</string>
+    <string name="settings_about">About</string>
+    <string name="settings_privacy_note">StepBeat Go makes no network requests of its own. Route and tempo lookups open your browser or maps app directly — nothing is sent to us.</string>
+
+    <!-- Achievements -->
+    <string name="achievements_title">Achievements</string>
+    <string name="achievements_first_route">First steps — calculated your first route</string>
+    <string name="achievements_five_routes">On a roll — 5 routes calculated</string>
+    <string name="achievements_all_genres">Genre explorer — tried every built-in genre</string>
+    <string name="achievements_first_playlist">Curator — built your first playlist</string>
+
+    <!-- Metronome -->
+    <string name="metronome_title">Click track</string>
+    <string name="metronome_bpm_format">%1$d BPM</string>
+    <string name="metronome_start">Start</string>
+    <string name="metronome_stop">Stop</string>
+
+    <!-- Common -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_back">Back</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+</resources>

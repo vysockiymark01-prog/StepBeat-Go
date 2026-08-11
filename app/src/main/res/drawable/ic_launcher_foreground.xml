@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder launcher foreground: simple equalizer-bar mark. Replace with real branding before release. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#8B7CF6"
+        android:pathData="M34,44 L42,44 L42,74 L34,74 Z" />
+    <path
+        android:fillColor="#B7ACFB"
+        android:pathData="M50,30 L58,30 L58,74 L50,74 Z" />
+    <path
+        android:fillColor="#8B7CF6"
+        android:pathData="M66,50 L74,50 L74,74 L66,74 Z" />
+</vector>
