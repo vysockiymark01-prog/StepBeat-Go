@@ -69,7 +69,7 @@
     to { opacity: 1; transform: translateY(0); }
   }
   label { display: block; font-size: 13px; color: var(--on-variant); margin-bottom: 6px; }
-  input[type=text], input[type=number] {
+  input[type=text], input[type=number], textarea {
     width: 100%;
     padding: 12px 14px;
     border-radius: 12px;
@@ -78,7 +78,9 @@
     color: var(--on-bg);
     font-size: 15px;
     margin-bottom: 14px;
+    font-family: inherit;
   }
+  textarea { min-height: 90px; font-size: 12px; resize: vertical; }
   .row { display: flex; gap: 10px; }
   .row > * { flex: 1; }
   button.primary {
@@ -154,15 +156,15 @@
     justify-content: space-between;
   }
   .suggestion-item:hover { background: var(--outline); }
-  .tabbar { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
   .tabbar button {
-    flex: 1;
+    flex: 1 1 40%;
     border: none;
     background: var(--surface-variant);
     color: var(--on-variant);
-    padding: 11px;
+    padding: 11px 6px;
     border-radius: 12px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
   }
@@ -192,6 +194,20 @@
     color: var(--on-variant);
     cursor: pointer;
   }
+  .tap-button {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    margin: 10px auto;
+    display: block;
+    transition: transform .08s ease;
+  }
+  .tap-button:active { transform: scale(.92); }
 </style>
 </head>
 <body data-theme="light">
@@ -205,11 +221,16 @@
     <button class="tab active" data-tab="home">Главная</button>
     <button class="tab" data-tab="routes">Маршруты <span id="tabRoutesCount"></span></button>
     <button class="tab" data-tab="saved">Плейлисты <span id="tabSavedCount"></span></button>
+    <button class="tab" data-tab="history">История <span id="tabHistoryCount"></span></button>
   </div>
 
   <!-- HOME -->
   <section id="screen-home">
     <p class="subtitle">Сколько бы занял этот путь под нужный темп?</p>
+    <div class="row" style="margin-bottom:16px;">
+      <button class="ghost" id="btnOpenCalibrate" style="margin:0;">🎵 Темп: <span id="baseBpmDisplayShort">113</span> BPM</button>
+      <button class="ghost" id="btnOpenBackup" style="margin:0;">💾 Резервная копия</button>
+    </div>
     <div id="homeRouteChips" class="route-chips"></div>
     <div class="card">
       <label>Откуда</label>
@@ -262,6 +283,45 @@
     <button class="primary" id="btnSaveRouteTpl" disabled>Сохранить шаблон</button>
   </section>
 
+  <!-- TAP-TEMPO CALIBRATION -->
+  <section id="screen-calibrate" class="hidden">
+    <button class="back" data-back="home">← Назад</button>
+    <h2>Мой темп ходьбы</h2>
+    <p class="muted">Тапай в такт своим обычным шагам хотя бы 6–8 раз подряд — посчитаем твой личный темп вместо усреднённого (сейчас используется 113 BPM по умолчанию)</p>
+    <div class="card" style="text-align:center">
+      <div class="result-number" id="tapBpmValue">—</div>
+      <p class="muted" id="tapStatus">Тапов: 0</p>
+      <button class="tap-button" id="btnTap">ТАП</button>
+    </div>
+    <button class="primary" id="btnSaveTapBpm" disabled>Сохранить как мой темп</button>
+    <button class="ghost" id="btnResetTapBpm">Сбросить к 113 BPM по умолчанию</button>
+  </section>
+
+  <!-- BACKUP: export/import as text, since there's no browser storage here -->
+  <section id="screen-backup" class="hidden">
+    <button class="back" data-back="home">← Назад</button>
+    <h2>Резервная копия</h2>
+    <p class="muted">Это веб-прототип без сохранения между визитами — всё живёт только пока открыта вкладка. Здесь можно скопировать все плейлисты, маршруты, историю и свой темп в текст, а потом вставить обратно в следующий раз</p>
+    <div class="card">
+      <label>Экспорт</label>
+      <button class="primary" id="btnExportBackup">Скопировать резервную копию</button>
+      <textarea id="backupOutput" readonly placeholder="Здесь появится код после нажатия кнопки выше" style="margin-top:12px;"></textarea>
+    </div>
+    <div class="card">
+      <label>Импорт</label>
+      <textarea id="backupInput" placeholder="Вставь сюда скопированный ранее код"></textarea>
+      <button class="primary" id="btnImportBackup">Восстановить из текста</button>
+    </div>
+  </section>
+
+  <!-- HISTORY (own tab) -->
+  <section id="screen-history" class="hidden">
+    <h2>История расчётов</h2>
+    <p class="muted" style="margin-top:-10px">Последние расчёты — самые новые сверху. Сохраняются только пока открыта эта вкладка (в настоящем приложении — навсегда через Room)</p>
+    <button class="ghost" id="btnClearHistory" style="margin-bottom:16px;">Очистить историю</button>
+    <div id="historyList"></div>
+  </section>
+
   <!-- MODE -->
   <section id="screen-mode" class="hidden">
     <button class="back" data-back="home">← Назад</button>
@@ -270,6 +330,25 @@
     <div class="mode-card" data-go="songs"><h3>Известные треки</h3><p>Готовый список известных песен с реальным темпом</p></div>
     <div class="mode-card" data-go="playlistpick"><h3>Мой плейлист <span id="modeSavedCountPill" class="pill"></span></h3><p>Выбери сохранённый плейлист или собери новый</p></div>
     <div class="mode-card" data-go="custom"><h3>Свой BPM</h3><p>Введи точный темп вручную</p></div>
+    <div class="mode-card" data-go="reverse"><h3>Хочу успеть за...</h3><p>Обратный расчёт — узнай, какой темп нужен под твоё время</p></div>
+  </section>
+
+  <!-- REVERSE CALC: target time -> needed BPM -->
+  <section id="screen-reverse" class="hidden">
+    <button class="back" data-back="mode">← Назад</button>
+    <h2>Хочу успеть за...</h2>
+    <p class="muted" style="margin-top:-10px">Маршрут обычным шагом: <span id="reverseBaselineText"></span></p>
+    <div class="card">
+      <label>За сколько минут хочешь дойти?</label>
+      <input type="number" id="reverseTargetMinutes" placeholder="15" min="1">
+      <button class="primary" id="btnReverseGo">Рассчитать нужный темп</button>
+    </div>
+    <div class="card hidden" id="reverseResultCard" style="text-align:center">
+      <p class="muted">Нужный темп</p>
+      <div class="result-number" id="reverseBpmResult">0</div>
+      <p>BPM</p>
+      <p class="muted" id="reverseSuggestion"></p>
+    </div>
   </section>
 
   <!-- PICK A PLAYLIST FOR THIS ROUTE -->
@@ -313,6 +392,7 @@
   <section id="screen-genre" class="hidden">
     <button class="back" data-back="mode">← Назад</button>
     <h2>Жанр</h2>
+    <button class="ghost" id="btnGenreSort" style="margin-bottom:14px;">Сортировка: по умолчанию</button>
     <div id="genreList"></div>
   </section>
 
@@ -321,6 +401,7 @@
     <button class="back" data-back="mode">← Назад</button>
     <h2>Известные треки</h2>
     <input type="text" id="songSearch" placeholder="Поиск по названию или исполнителю..." style="margin-bottom:14px;">
+    <button class="ghost" id="btnSongSort" style="margin-bottom:14px;">Сортировка: по умолчанию</button>
     <p class="muted" style="margin-top:-6px">Темп — примерный ориентир, для точного значения используй поиск в разделе «Мой плейлист»</p>
     <div id="songList"></div>
   </section>
@@ -370,6 +451,7 @@
     <div class="card">
       <p class="muted" id="resultTracks"></p>
     </div>
+    <button class="ghost" id="btnCopyResult">📋 Скопировать результат</button>
     <button class="ghost" data-go="home2">Начать заново</button>
   </section>
 </div>
@@ -381,7 +463,7 @@ const GENRES = [
   ["Disco", 120], ["House", 124], ["Techno", 130], ["Trance", 138],
   ["Metal", 150], ["Punk", 165], ["Drum & Bass", 170], ["Hardcore", 180]
 ];
-const BASE_BPM = 113;
+let BASE_BPM = 113; // was a const - now user-calibratable via tap-tempo
 const BASE_WALK_SPEED_KMH = 5.0;
 const DEFAULT_TRACK_SECONDS = 210;
 
@@ -429,6 +511,14 @@ let SAVED_ROUTES = [];
 let routeEditIndex = null;
 let routeEditorReturnTo = "routes"; // "routes" (library tab) or "home" (quick-add from home)
 
+// History of past calculations - same in-memory-only caveat as everything
+// else above. Newest first. Each: { originText, destText, label, resultSeconds, timestamp }.
+let HISTORY = [];
+
+// Tap-tempo calibration state.
+let tapTimestamps = [];
+let lastTapBpm = null;
+
 // ---- theme ----
 const themeBtn = document.getElementById("themeToggle");
 themeBtn.onclick = () => {
@@ -438,15 +528,21 @@ themeBtn.onclick = () => {
 };
 
 // ---- navigation ----
-const TOP_LEVEL_SCREENS = { "screen-home": "home", "screen-routes": "routes", "screen-saved": "saved" };
+const TOP_LEVEL_SCREENS = { "screen-home": "home", "screen-routes": "routes", "screen-saved": "saved", "screen-history": "history" };
 function show(id) {
   document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
   if (id === "screen-saved") renderSavedList();
   if (id === "screen-playlistpick") renderPickList();
   if (id === "screen-routes") renderRoutesList();
-  if (id === "screen-home") renderHomeRouteChips();
+  if (id === "screen-home") { renderHomeRouteChips(); updateBaseBpmDisplay(); }
   if (id === "screen-check") renderCheckRouteChips();
+  if (id === "screen-history") renderHistoryList();
+  if (id === "screen-reverse") {
+    document.getElementById("reverseBaselineText").textContent = formatDuration(state.baselineSeconds);
+    document.getElementById("reverseResultCard").classList.add("hidden");
+    document.getElementById("reverseTargetMinutes").value = "";
+  }
 
   const tabbar = document.getElementById("tabbar");
   const topLevelTab = TOP_LEVEL_SCREENS[id];
@@ -698,26 +794,217 @@ function renderRoutesList() {
   });
 }
 
-// ---- genre screen ----
-const genreList = document.getElementById("genreList");
-GENRES.forEach(([name, bpm]) => {
-  const div = document.createElement("div");
-  div.className = "genre-item";
-  div.innerHTML = `<span>${name}</span><span class="pill">${bpm} BPM</span>`;
-  div.onclick = () => {
-    state.mode = "genre"; state.chosenGenre = { name, bpm };
-    computeAndShowResult();
+// ---- tap-tempo calibration of the base walking BPM ----
+function updateBaseBpmDisplay() {
+  const shortEl = document.getElementById("baseBpmDisplayShort");
+  if (shortEl) shortEl.textContent = BASE_BPM;
+}
+updateBaseBpmDisplay();
+
+document.getElementById("btnOpenCalibrate").onclick = () => {
+  tapTimestamps = [];
+  lastTapBpm = null;
+  document.getElementById("tapBpmValue").textContent = "—";
+  document.getElementById("tapStatus").textContent = "Тапов: 0";
+  document.getElementById("btnSaveTapBpm").disabled = true;
+  show("screen-calibrate");
+};
+
+document.getElementById("btnOpenBackup").onclick = () => {
+  document.getElementById("backupOutput").value = "";
+  document.getElementById("backupInput").value = "";
+  show("screen-backup");
+};
+
+document.getElementById("btnTap").onclick = () => {
+  const now = Date.now();
+  tapTimestamps.push(now);
+  if (tapTimestamps.length > 8) tapTimestamps.shift(); // only last 8 taps matter for a stable average
+  if (tapTimestamps.length < 2) {
+    document.getElementById("tapStatus").textContent = `Тапов: ${tapTimestamps.length} — продолжай`;
+    return;
+  }
+  const intervals = [];
+  for (let i = 1; i < tapTimestamps.length; i++) intervals.push(tapTimestamps[i] - tapTimestamps[i - 1]);
+  const avgMs = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+  const bpm = Math.round(60000 / avgMs);
+  lastTapBpm = bpm;
+  document.getElementById("tapBpmValue").textContent = bpm;
+  document.getElementById("tapStatus").textContent = `Тапов: ${tapTimestamps.length} · продолжай для точности`;
+  document.getElementById("btnSaveTapBpm").disabled = !(bpm >= 40 && bpm <= 220);
+};
+
+document.getElementById("btnSaveTapBpm").onclick = () => {
+  if (!lastTapBpm) return;
+  BASE_BPM = lastTapBpm;
+  updateBaseBpmDisplay();
+  show("screen-home");
+};
+
+document.getElementById("btnResetTapBpm").onclick = () => {
+  BASE_BPM = 113;
+  updateBaseBpmDisplay();
+  show("screen-home");
+};
+
+// ---- reverse calculation: target time -> needed BPM ----
+document.getElementById("btnReverseGo").onclick = () => {
+  const targetMin = parseFloat(document.getElementById("reverseTargetMinutes").value);
+  if (!(targetMin > 0) || !(state.baselineSeconds > 0)) return;
+  const neededBpm = Math.round(BASE_BPM * state.baselineSeconds / (targetMin * 60));
+
+  document.getElementById("reverseBpmResult").textContent = neededBpm;
+
+  const closestGenre = GENRES.reduce((best, g) => Math.abs(g[1] - neededBpm) < Math.abs(best[1] - neededBpm) ? g : best, GENRES[0]);
+  const closestSong = SONGS.reduce((best, s) => Math.abs(s[2] - neededBpm) < Math.abs(best[2] - neededBpm) ? s : best, SONGS[0]);
+  let suggestion;
+  if (neededBpm < 40) {
+    suggestion = "Это медленнее любого разумного темпа ходьбы — маршрут и так короче, чем твоя цель.";
+  } else if (neededBpm > 220) {
+    suggestion = "Настолько быстрый темп нереален для ходьбы — за это время маршрут пешком не пройти.";
+  } else {
+    suggestion = `Ближе всего: жанр «${closestGenre[0]}» (${closestGenre[1]} BPM) или трек «${closestSong[0]} — ${closestSong[1]}» (${closestSong[2]} BPM)`;
+  }
+  document.getElementById("reverseSuggestion").textContent = suggestion;
+  document.getElementById("reverseResultCard").classList.remove("hidden");
+};
+
+// ---- backup: export/import everything as a text blob (no browser storage here) ----
+document.getElementById("btnExportBackup").onclick = () => {
+  const backup = {
+    version: 1,
+    savedPlaylists: SAVED_PLAYLISTS,
+    savedRoutes: SAVED_ROUTES,
+    history: HISTORY,
+    baseBpm: BASE_BPM
   };
-  genreList.appendChild(div);
-});
+  const json = JSON.stringify(backup);
+  const output = document.getElementById("backupOutput");
+  output.value = json;
+  output.select();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).catch(() => {});
+  }
+};
+
+document.getElementById("btnImportBackup").onclick = () => {
+  const raw = document.getElementById("backupInput").value.trim();
+  if (!raw) return;
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch (e) {
+    alert("Не получилось прочитать текст — проверь, что скопировал его целиком");
+    return;
+  }
+  if (Array.isArray(data.savedPlaylists)) SAVED_PLAYLISTS = data.savedPlaylists;
+  if (Array.isArray(data.savedRoutes)) SAVED_ROUTES = data.savedRoutes;
+  if (Array.isArray(data.history)) HISTORY = data.history;
+  if (typeof data.baseBpm === "number") BASE_BPM = data.baseBpm;
+
+  updateSavedCountPill();
+  updateRoutesCountPill();
+  updateBaseBpmDisplay();
+  renderHistoryList();
+  updateHistoryCountPill();
+  alert(`Восстановлено: плейлистов — ${SAVED_PLAYLISTS.length}, маршрутов — ${SAVED_ROUTES.length}, записей истории — ${HISTORY.length}`);
+};
+
+// ---- history of past calculations ----
+function updateHistoryCountPill() {
+  const count = HISTORY.length ? String(HISTORY.length) : "";
+  document.getElementById("tabHistoryCount").textContent = count;
+}
+updateHistoryCountPill();
+
+function pushHistory(record) {
+  HISTORY.unshift(record); // newest first
+  if (HISTORY.length > 50) HISTORY.pop(); // keep it from growing forever in one long session
+  updateHistoryCountPill();
+}
+
+function renderHistoryList() {
+  const box = document.getElementById("historyList");
+  if (HISTORY.length === 0) {
+    box.innerHTML = '<p class="muted">Пока пусто — здесь появятся твои расчёты</p>';
+    return;
+  }
+  box.innerHTML = "";
+  HISTORY.forEach((h, i) => {
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    const when = new Date(h.timestamp).toLocaleString();
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <b>${h.originText} → ${h.destText}</b><br>
+          <span class="muted">${h.label} · ${formatDuration(h.resultSeconds)}</span><br>
+          <span class="muted" style="font-size:11px;">${when}</span>
+        </div>
+        <button data-del-hist="${i}" style="border:none;background:none;color:var(--on-variant);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+  box.querySelectorAll("button[data-del-hist]").forEach(btn => btn.onclick = () => {
+    HISTORY.splice(+btn.dataset.delHist, 1);
+    updateHistoryCountPill();
+    renderHistoryList();
+  });
+}
+
+document.getElementById("btnClearHistory").onclick = () => {
+  if (HISTORY.length === 0) return;
+  if (confirm("Очистить всю историю расчётов?")) {
+    HISTORY = [];
+    updateHistoryCountPill();
+    renderHistoryList();
+  }
+};
+
+// ---- genre screen ----
+// Sort cycles: default (as authored) -> slow-to-fast -> fast-to-slow -> default.
+const genreList = document.getElementById("genreList");
+let genreSortDir = null; // null | 'asc' | 'desc'
+function renderGenres() {
+  let list = GENRES.slice();
+  if (genreSortDir === "asc") list.sort((a, b) => a[1] - b[1]);
+  if (genreSortDir === "desc") list.sort((a, b) => b[1] - a[1]);
+  genreList.innerHTML = "";
+  list.forEach(([name, bpm]) => {
+    const div = document.createElement("div");
+    div.className = "genre-item";
+    div.innerHTML = `<span>${name}</span><span class="pill">${bpm} BPM</span>`;
+    div.onclick = () => {
+      state.mode = "genre"; state.chosenGenre = { name, bpm };
+      computeAndShowResult();
+    };
+    genreList.appendChild(div);
+  });
+}
+function updateGenreSortLabel() {
+  const btn = document.getElementById("btnGenreSort");
+  btn.textContent = genreSortDir === "asc" ? "Сортировка: медленные → быстрые"
+    : genreSortDir === "desc" ? "Сортировка: быстрые → медленные"
+    : "Сортировка: по умолчанию";
+}
+document.getElementById("btnGenreSort").onclick = () => {
+  genreSortDir = genreSortDir === null ? "asc" : (genreSortDir === "asc" ? "desc" : null);
+  updateGenreSortLabel();
+  renderGenres();
+};
+renderGenres();
 
 // ---- known songs ----
 const songList = document.getElementById("songList");
+let songSortDir = null; // null | 'asc' | 'desc'
 function renderSongs(filter = "") {
   const q = filter.trim().toLowerCase();
-  const filtered = SONGS.filter(([name, artist]) =>
+  let filtered = SONGS.filter(([name, artist]) =>
     !q || name.toLowerCase().includes(q) || artist.toLowerCase().includes(q)
   );
+  if (songSortDir === "asc") filtered = filtered.slice().sort((a, b) => a[2] - b[2]);
+  if (songSortDir === "desc") filtered = filtered.slice().sort((a, b) => b[2] - a[2]);
   songList.innerHTML = "";
   if (filtered.length === 0) {
     songList.innerHTML = '<p class="muted">Ничего не нашлось — попробуй другой запрос или добавь трек вручную в разделе «Мой плейлист»</p>';
@@ -735,6 +1022,17 @@ function renderSongs(filter = "") {
     songList.appendChild(div);
   });
 }
+function updateSongSortLabel() {
+  const btn = document.getElementById("btnSongSort");
+  btn.textContent = songSortDir === "asc" ? "Сортировка: медленные → быстрые"
+    : songSortDir === "desc" ? "Сортировка: быстрые → медленные"
+    : "Сортировка: по умолчанию";
+}
+document.getElementById("btnSongSort").onclick = () => {
+  songSortDir = songSortDir === null ? "asc" : (songSortDir === "asc" ? "desc" : null);
+  updateSongSortLabel();
+  renderSongs(document.getElementById("songSearch").value);
+};
 renderSongs();
 document.getElementById("songSearch").addEventListener("input", e => renderSongs(e.target.value));
 
@@ -1103,6 +1401,15 @@ function computeAndShowResult(){
   document.getElementById("resultDistance").textContent = state.distanceKm ? `Расстояние: ${state.distanceKm.toFixed(1)} км` : "";
   document.getElementById("resultTracks").textContent = tracksInfo;
 
+  state.lastResultText = `${state.originText} → ${state.destText} · ${label} · ${formatDuration(resultSeconds)} (обычным шагом ${formatDuration(state.baselineSeconds)})`;
+  pushHistory({
+    originText: state.originText,
+    destText: state.destText,
+    label,
+    resultSeconds,
+    timestamp: Date.now()
+  });
+
   const minutesEl = document.getElementById("resultMinutes");
   const target = Math.round(resultSeconds / 60);
   let current = 0;
@@ -1116,6 +1423,19 @@ function computeAndShowResult(){
 
   show("screen-result");
 }
+
+document.getElementById("btnCopyResult").onclick = () => {
+  const text = state.lastResultText || "";
+  if (!text) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => alert("Скопировано!"),
+      () => prompt("Скопируй вручную:", text)
+    );
+  } else {
+    prompt("Скопируй вручную:", text);
+  }
+};
 </script>
 </body>
 </html>
