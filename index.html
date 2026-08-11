@@ -183,8 +183,29 @@
     font-size: 13px;
     color: var(--on-bg);
     cursor: pointer;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .route-chip:hover { border-color: var(--accent); }
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    background: var(--on-bg);
+    color: var(--bg);
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity .3s ease;
+  }
+  .toast.hidden { opacity: 0; pointer-events: none; }
   .route-chip-add {
     background: transparent;
     border: 1px dashed var(--outline);
@@ -456,6 +477,8 @@
   </section>
 </div>
 
+<div id="toast" class="toast hidden"></div>
+
 <script>
 const GENRES = [
   ["Lo-fi", 80], ["Reggae", 75], ["Ballad", 65], ["Classical", 90],
@@ -636,6 +659,7 @@ function renderHomeRouteChips() {
     const chip = document.createElement("button");
     chip.className = "route-chip";
     chip.textContent = r.name;
+    chip.title = r.name;
     chip.onclick = () => applyRouteToHome(r);
     box.appendChild(chip);
   });
@@ -661,6 +685,7 @@ function renderCheckRouteChips() {
     const chip = document.createElement("button");
     chip.className = "route-chip";
     chip.textContent = r.name;
+    chip.title = r.name;
     chip.onclick = () => applyRouteToCheck(r);
     box.appendChild(chip);
   });
@@ -1171,7 +1196,7 @@ document.getElementById("btnSavePlaylist").onclick = () => {
   if (state.playlistOrigin === "library") {
     show("screen-saved");
   } else {
-    alert(`Сохранено: «${finalName}» (${state.tracks.length} треков)`);
+    alert(`Сохранено: «${finalName}» (${state.tracks.length} ${tracksWord(state.tracks.length)})`);
   }
 };
 
@@ -1188,7 +1213,7 @@ function renderSavedList() {
     const avgBpm = Math.round(pl.tracks.reduce((s, t) => s + t.bpm, 0) / pl.tracks.length);
     div.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} треков · средний темп ~${avgBpm} BPM</span></div>
+        <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} ${tracksWord(pl.tracks.length)} · средний темп ~${avgBpm} BPM</span></div>
         <button data-del="${i}" style="border:none;background:none;color:var(--on-variant);font-size:16px;cursor:pointer;">✕</button>
       </div>
       <div class="lib-item-actions">
@@ -1233,7 +1258,7 @@ function renderPickList() {
     const div = document.createElement("div");
     div.className = "lib-item";
     div.innerHTML = `
-      <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} треков · средний темп ~${avgBpm} BPM</span></div>
+      <div><b>${pl.name}</b><br><span class="muted">${pl.tracks.length} ${tracksWord(pl.tracks.length)} · средний темп ~${avgBpm} BPM</span></div>
       <div class="lib-item-actions">
         <button class="primary-mini" data-use="${i}">Использовать для этого маршрута</button>
       </div>
@@ -1375,6 +1400,16 @@ function formatDuration(totalSeconds){
   return m > 0 ? `${m} мин ${s} сек` : `${s} сек`;
 }
 
+// Russian noun pluralization (1 трек / 2 трека / 5 треков и т.п.)
+function ruPlural(n, one, few, many) {
+  const mod10 = Math.abs(n) % 10, mod100 = Math.abs(n) % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
+}
+function tracksWord(n) { return ruPlural(n, "трек", "трека", "треков"); }
+
 function computeAndShowResult(){
   let label, resultSeconds, tracksInfo;
   if (state.mode === "genre") {
@@ -1424,12 +1459,23 @@ function computeAndShowResult(){
   show("screen-result");
 }
 
+// Quiet, self-dismissing toast instead of a blocking alert() - used for
+// non-critical confirmations like "copied to clipboard".
+let toastTimer = null;
+function showToast(message) {
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add("hidden"), 2200);
+}
+
 document.getElementById("btnCopyResult").onclick = () => {
   const text = state.lastResultText || "";
   if (!text) return;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(
-      () => alert("Скопировано!"),
+      () => showToast("Скопировано!"),
       () => prompt("Скопируй вручную:", text)
     );
   } else {
