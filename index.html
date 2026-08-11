@@ -172,6 +172,26 @@
   .lib-item-actions { display: flex; gap: 8px; margin-top: 10px; }
   .lib-item-actions button { flex: 1; padding: 9px; border-radius: 10px; border: 1px solid var(--outline); background: transparent; color: var(--on-bg); font-size: 13px; cursor: pointer; }
   .lib-item-actions button.primary-mini { background: var(--accent); color: #fff; border: none; }
+  .route-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .route-chip {
+    background: var(--surface);
+    border: 1px solid var(--outline);
+    border-radius: 20px;
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--on-bg);
+    cursor: pointer;
+  }
+  .route-chip:hover { border-color: var(--accent); }
+  .route-chip-add {
+    background: transparent;
+    border: 1px dashed var(--outline);
+    border-radius: 20px;
+    padding: 9px 14px;
+    font-size: 13px;
+    color: var(--on-variant);
+    cursor: pointer;
+  }
 </style>
 </head>
 <body data-theme="light">
@@ -183,12 +203,14 @@
 
   <div class="tabbar" id="tabbar">
     <button class="tab active" data-tab="home">Главная</button>
+    <button class="tab" data-tab="routes">Маршруты <span id="tabRoutesCount"></span></button>
     <button class="tab" data-tab="saved">Плейлисты <span id="tabSavedCount"></span></button>
   </div>
 
   <!-- HOME -->
   <section id="screen-home">
     <p class="subtitle">Сколько бы занял этот путь под нужный темп?</p>
+    <div id="homeRouteChips" class="route-chips"></div>
     <div class="card">
       <label>Откуда</label>
       <input type="text" id="origin" placeholder="Дом">
@@ -211,6 +233,33 @@
       <input type="number" id="distance" placeholder="1.6" step="0.1">
     </div>
     <button class="primary" id="btnContinue" disabled>Продолжить</button>
+  </section>
+
+  <!-- SAVED ROUTES (own tab) -->
+  <section id="screen-routes" class="hidden">
+    <h2>Мои маршруты</h2>
+    <p class="muted" style="margin-top:-10px">Шаблоны вроде «Дом → Учёба» — сохрани один раз, потом просто выбирай на главной. Данные можно редактировать в любой момент. Сохраняются только пока открыта эта вкладка (в настоящем приложении — навсегда через Room)</p>
+    <button class="primary" id="btnNewRouteLibrary" style="margin-bottom:16px;">＋ Новый маршрут</button>
+    <div id="routesList"></div>
+  </section>
+
+  <!-- ROUTE TEMPLATE EDITOR -->
+  <section id="screen-route-editor" class="hidden">
+    <button class="back" id="routeEditorBackBtn">← Назад</button>
+    <h2 id="routeEditorTitle">Новый маршрут</h2>
+    <div class="card">
+      <label>Название шаблона</label>
+      <input type="text" id="routeTplName" placeholder="Дом → Учёба">
+      <label>Откуда</label>
+      <input type="text" id="routeTplOrigin" placeholder="Дом">
+      <label>Куда</label>
+      <input type="text" id="routeTplDestination" placeholder="Учёба">
+      <label>Время пешком, минут</label>
+      <input type="number" id="routeTplMinutes" placeholder="20" min="1">
+      <label>Расстояние, км (необязательно)</label>
+      <input type="number" id="routeTplDistance" placeholder="1.6" step="0.1">
+    </div>
+    <button class="primary" id="btnSaveRouteTpl" disabled>Сохранить шаблон</button>
   </section>
 
   <!-- MODE -->
@@ -245,6 +294,7 @@
     <button class="back" data-back="saved">← Назад</button>
     <h2 id="checkTitle">Изменить маршрут</h2>
     <p class="muted" id="checkSubtitle" style="margin-top:-10px"></p>
+    <div id="checkRouteChips" class="route-chips"></div>
     <div class="card">
       <label>Время пешком, минут</label>
       <input type="number" id="checkMinutes" placeholder="20" min="1">
@@ -373,6 +423,12 @@ let state = { originText:"", destText:"", baselineSeconds:0, distanceKm:null, mo
 let SAVED_PLAYLISTS = [];
 let currentCheckPlaylist = null;
 
+// Saved route templates ("Дом → Учёба" и т.п.) - same in-memory-only caveat
+// as playlists above. Each: { name, origin, destination, minutes, distanceKm }.
+let SAVED_ROUTES = [];
+let routeEditIndex = null;
+let routeEditorReturnTo = "routes"; // "routes" (library tab) or "home" (quick-add from home)
+
 // ---- theme ----
 const themeBtn = document.getElementById("themeToggle");
 themeBtn.onclick = () => {
@@ -382,12 +438,15 @@ themeBtn.onclick = () => {
 };
 
 // ---- navigation ----
-const TOP_LEVEL_SCREENS = { "screen-home": "home", "screen-saved": "saved" };
+const TOP_LEVEL_SCREENS = { "screen-home": "home", "screen-routes": "routes", "screen-saved": "saved" };
 function show(id) {
   document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
   document.getElementById(id).classList.remove("hidden");
   if (id === "screen-saved") renderSavedList();
   if (id === "screen-playlistpick") renderPickList();
+  if (id === "screen-routes") renderRoutesList();
+  if (id === "screen-home") renderHomeRouteChips();
+  if (id === "screen-check") renderCheckRouteChips();
 
   const tabbar = document.getElementById("tabbar");
   const topLevelTab = TOP_LEVEL_SCREENS[id];
@@ -455,6 +514,189 @@ document.getElementById("btnContinue").onclick = () => {
   state.distanceKm = isNaN(d) ? null : d;
   show("screen-mode");
 };
+
+// ---- saved route templates ("Дом → Учёба" и т.п.) ----
+function updateRoutesCountPill() {
+  const count = SAVED_ROUTES.length ? String(SAVED_ROUTES.length) : "";
+  document.getElementById("tabRoutesCount").textContent = count;
+}
+updateRoutesCountPill();
+
+// Fills the (still fully editable) Home form from a saved template - this is
+// what makes it "редактируемым": nothing is locked, it's just a starting
+// point the user can then adjust like any manually typed value.
+function applyRouteToHome(route) {
+  document.getElementById("origin").value = route.origin || "";
+  document.getElementById("destination").value = route.destination || "";
+  document.getElementById("minutes").value = route.minutes || "";
+  document.getElementById("distance").value = (route.distanceKm != null) ? route.distanceKm : "";
+  refreshContinueBtn();
+}
+
+function renderHomeRouteChips() {
+  const box = document.getElementById("homeRouteChips");
+  box.innerHTML = "";
+  SAVED_ROUTES.forEach((r, i) => {
+    const chip = document.createElement("button");
+    chip.className = "route-chip";
+    chip.textContent = r.name;
+    chip.onclick = () => applyRouteToHome(r);
+    box.appendChild(chip);
+  });
+  const addChip = document.createElement("button");
+  addChip.className = "route-chip-add";
+  addChip.textContent = "＋ Сохранить как шаблон";
+  addChip.onclick = () => openRouteEditor(null, "home");
+  box.appendChild(addChip);
+}
+
+// Fills the "Изменить маршрут" (check) screen's minutes/km from a saved
+// template - same idea as applyRouteToHome, just a different pair of fields.
+function applyRouteToCheck(route) {
+  document.getElementById("checkMinutes").value = route.minutes || "";
+  document.getElementById("checkDistance").value = (route.distanceKm != null) ? route.distanceKm : "";
+  document.getElementById("checkResultCard").classList.add("hidden");
+}
+
+function renderCheckRouteChips() {
+  const box = document.getElementById("checkRouteChips");
+  box.innerHTML = "";
+  SAVED_ROUTES.forEach((r, i) => {
+    const chip = document.createElement("button");
+    chip.className = "route-chip";
+    chip.textContent = r.name;
+    chip.onclick = () => applyRouteToCheck(r);
+    box.appendChild(chip);
+  });
+  const addChip = document.createElement("button");
+  addChip.className = "route-chip-add";
+  addChip.textContent = "＋ Сохранить как шаблон";
+  addChip.onclick = () => openRouteEditor(null, "check");
+  box.appendChild(addChip);
+}
+
+function openRouteEditor(existingIndex, returnTo) {
+  routeEditIndex = (existingIndex === undefined || existingIndex === null) ? null : existingIndex;
+  routeEditorReturnTo = returnTo || "routes";
+
+  const title = document.getElementById("routeEditorTitle");
+  const nameInput = document.getElementById("routeTplName");
+  const originInput = document.getElementById("routeTplOrigin");
+  const destInput = document.getElementById("routeTplDestination");
+  const minutesInput = document.getElementById("routeTplMinutes");
+  const distanceInput = document.getElementById("routeTplDistance");
+
+  if (routeEditIndex !== null) {
+    const r = SAVED_ROUTES[routeEditIndex];
+    title.textContent = "Изменить маршрут";
+    nameInput.value = r.name;
+    originInput.value = r.origin;
+    destInput.value = r.destination;
+    minutesInput.value = r.minutes;
+    distanceInput.value = (r.distanceKm != null) ? r.distanceKm : "";
+  } else {
+    title.textContent = "Новый маршрут";
+    // When saving straight from Home or the check-route screen, prefill with
+    // whatever is already typed there instead of starting from a blank form.
+    if (returnTo === "home") {
+      nameInput.value = "";
+      originInput.value = document.getElementById("origin").value || "";
+      destInput.value = document.getElementById("destination").value || "";
+      minutesInput.value = document.getElementById("minutes").value || "";
+      distanceInput.value = document.getElementById("distance").value || "";
+    } else if (returnTo === "check") {
+      // The check screen has no origin/destination fields (it's just "will
+      // this playlist fit this route"), so leave those blank for the user
+      // to fill in, but carry over the minutes/km they already entered.
+      nameInput.value = currentCheckPlaylist ? currentCheckPlaylist.name : "";
+      originInput.value = "";
+      destInput.value = "";
+      minutesInput.value = document.getElementById("checkMinutes").value || "";
+      distanceInput.value = document.getElementById("checkDistance").value || "";
+    } else {
+      nameInput.value = "";
+      originInput.value = "";
+      destInput.value = "";
+      minutesInput.value = "";
+      distanceInput.value = "";
+    }
+  }
+
+  document.getElementById("routeEditorBackBtn").onclick = () => show("screen-" + routeEditorReturnTo);
+  refreshRouteTplSaveBtn();
+  show("screen-route-editor");
+}
+
+function refreshRouteTplSaveBtn() {
+  const name = document.getElementById("routeTplName").value.trim();
+  const minutes = parseFloat(document.getElementById("routeTplMinutes").value);
+  document.getElementById("btnSaveRouteTpl").disabled = !(name && minutes > 0);
+}
+["routeTplName", "routeTplMinutes"].forEach(id =>
+  document.getElementById(id).addEventListener("input", refreshRouteTplSaveBtn)
+);
+
+document.getElementById("btnSaveRouteTpl").onclick = () => {
+  const name = document.getElementById("routeTplName").value.trim();
+  const minutes = parseFloat(document.getElementById("routeTplMinutes").value);
+  if (!(name && minutes > 0)) return;
+  const distanceRaw = parseFloat(document.getElementById("routeTplDistance").value);
+
+  const route = {
+    name,
+    origin: document.getElementById("routeTplOrigin").value.trim(),
+    destination: document.getElementById("routeTplDestination").value.trim(),
+    minutes,
+    distanceKm: isNaN(distanceRaw) ? null : distanceRaw
+  };
+
+  if (routeEditIndex !== null) {
+    SAVED_ROUTES[routeEditIndex] = route;
+  } else {
+    SAVED_ROUTES.push(route);
+  }
+  updateRoutesCountPill();
+  show("screen-" + routeEditorReturnTo);
+};
+
+document.getElementById("btnNewRouteLibrary").onclick = () => openRouteEditor(null, "routes");
+
+function renderRoutesList() {
+  const box = document.getElementById("routesList");
+  if (SAVED_ROUTES.length === 0) {
+    box.innerHTML = '<p class="muted">Пока нет сохранённых маршрутов — нажми «＋ Новый маршрут» выше, чтобы собрать первый шаблон вроде «Дом → Учёба»</p>';
+    return;
+  }
+  box.innerHTML = "";
+  SAVED_ROUTES.forEach((r, i) => {
+    const div = document.createElement("div");
+    div.className = "lib-item";
+    const distText = (r.distanceKm != null) ? ` · ${r.distanceKm} км` : "";
+    div.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><b>${r.name}</b><br><span class="muted">${r.origin || "?"} → ${r.destination || "?"} · ${r.minutes} мин${distText}</span></div>
+        <button data-del="${i}" style="border:none;background:none;color:var(--on-variant);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <div class="lib-item-actions">
+        <button data-edit="${i}">Изменить</button>
+        <button class="primary-mini" data-use="${i}">Использовать</button>
+      </div>
+    `;
+    box.appendChild(div);
+  });
+  box.querySelectorAll("button[data-edit]").forEach(btn => btn.onclick = () => {
+    openRouteEditor(+btn.dataset.edit, "routes");
+  });
+  box.querySelectorAll("button[data-use]").forEach(btn => btn.onclick = () => {
+    applyRouteToHome(SAVED_ROUTES[+btn.dataset.use]);
+    show("screen-home");
+  });
+  box.querySelectorAll("button[data-del]").forEach(btn => btn.onclick = () => {
+    SAVED_ROUTES.splice(+btn.dataset.del, 1);
+    updateRoutesCountPill();
+    renderRoutesList();
+  });
+}
 
 // ---- genre screen ----
 const genreList = document.getElementById("genreList");
@@ -804,6 +1046,7 @@ document.getElementById("btnPlaylistGo").onclick = () => {
   computeAndShowResult();
 };
 renderTracks();
+renderHomeRouteChips();
 
 // ---- calculation (mirrors calc/TempoCalculator.kt) ----
 function timeUnderTempo(baselineSeconds, baseBpm, targetBpm){
