@@ -1,0 +1,19 @@
+{
+  "name": "StepBeat Go",
+  "short_name": "StepBeat Go",
+  "description": "Рассчитай, сколько займёт маршрут в такт выбранной музыке — без единого API. Жанры, известные треки, свой BPM или собственный плейлист.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAFA",
+  "theme_color": "#6E5AF0",
+  "lang": "ru",
+  "dir": "ltr",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
