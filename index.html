@@ -36,6 +36,9 @@
     --outline: #333338;
   }
   * { box-sizing: border-box; }
+  html {
+    overscroll-behavior-y: none;
+  }
   body {
     margin: 0;
     font-family: -apple-system, "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
@@ -43,6 +46,7 @@
     color: var(--on-bg);
     transition: background .3s ease, color .3s ease;
     min-height: 100vh;
+    overscroll-behavior-y: none;
   }
   .phone {
     max-width: 420px;
@@ -587,6 +591,41 @@ function show(id) {
   } else {
     tabbar.classList.add("hidden");
   }
+  saveLocalState(id);
+}
+
+// ---- persist app state in the browser so refresh / pull-to-refresh doesn't lose anything ----
+const LOCAL_STATE_KEY = "stepbeatgo_local_state_v1";
+function saveLocalState(currentScreenId) {
+  try {
+    const payload = {
+      version: 1,
+      currentScreen: currentScreenId || null,
+      savedPlaylists: SAVED_PLAYLISTS,
+      savedRoutes: SAVED_ROUTES,
+      history: HISTORY,
+      baseBpm: BASE_BPM
+    };
+    localStorage.setItem(LOCAL_STATE_KEY, JSON.stringify(payload));
+  } catch (e) { /* storage unavailable - fail silently, nothing critical depends on it */ }
+}
+function loadLocalState() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STATE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.savedPlaylists)) SAVED_PLAYLISTS = data.savedPlaylists;
+    if (Array.isArray(data.savedRoutes)) SAVED_ROUTES = data.savedRoutes;
+    if (Array.isArray(data.history)) HISTORY = data.history;
+    if (typeof data.baseBpm === "number") BASE_BPM = data.baseBpm;
+    updateSavedCountPill();
+    updateRoutesCountPill();
+    updateBaseBpmDisplay();
+    updateHistoryCountPill();
+    if (data.currentScreen && document.getElementById(data.currentScreen)) {
+      show(data.currentScreen);
+    }
+  } catch (e) { /* corrupted/unavailable storage - just start fresh */ }
 }
 document.querySelectorAll("[data-back]").forEach(b => b.onclick = () => show("screen-" + b.dataset.back));
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
@@ -828,6 +867,7 @@ function renderRoutesList() {
     SAVED_ROUTES.splice(+btn.dataset.del, 1);
     updateRoutesCountPill();
     renderRoutesList();
+    saveLocalState("screen-routes");
   });
 }
 
@@ -944,6 +984,7 @@ document.getElementById("btnImportBackup").onclick = () => {
   updateBaseBpmDisplay();
   renderHistoryList();
   updateHistoryCountPill();
+  saveLocalState("screen-backup");
   alert(`Восстановлено: плейлистов — ${SAVED_PLAYLISTS.length}, маршрутов — ${SAVED_ROUTES.length}, записей истории — ${HISTORY.length}`);
 };
 
@@ -987,6 +1028,7 @@ function renderHistoryList() {
     HISTORY.splice(+btn.dataset.delHist, 1);
     updateHistoryCountPill();
     renderHistoryList();
+    saveLocalState("screen-history");
   });
 }
 
@@ -996,6 +1038,7 @@ document.getElementById("btnClearHistory").onclick = () => {
     HISTORY = [];
     updateHistoryCountPill();
     renderHistoryList();
+    saveLocalState("screen-history");
   }
 };
 
@@ -1251,6 +1294,7 @@ function renderSavedList() {
     SAVED_PLAYLISTS.splice(+btn.dataset.del, 1);
     updateSavedCountPill();
     renderSavedList();
+    saveLocalState("screen-saved");
   });
 }
 
@@ -1494,6 +1538,25 @@ document.getElementById("btnCopyResult").onclick = () => {
     prompt("Скопируй вручную:", text);
   }
 };
+
+// ---- restore saved data + last open screen on load ----
+loadLocalState();
+
+// ---- extra JS-level guard against pull-to-refresh on browsers/WebViews
+// that don't respect CSS overscroll-behavior. Only blocks the gesture when
+// the page is already scrolled to the very top and the user drags down -
+// normal scrolling anywhere else is untouched. ----
+(function () {
+  let startY = 0;
+  document.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener("touchmove", (e) => {
+    const atTop = (document.scrollingElement || document.documentElement).scrollTop <= 0;
+    const draggingDown = e.touches[0].clientY - startY > 0;
+    if (atTop && draggingDown) e.preventDefault();
+  }, { passive: false });
+})();
 
 // Register the offline app-shell service worker (needed for PWABuilder /
 // Android install eligibility). Silently no-ops if unsupported or if the
