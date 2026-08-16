@@ -124,6 +124,19 @@
     cursor: pointer;
     margin-top: 8px;
   }
+  .contact-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--surface-variant);
+    color: var(--on-bg);
+    text-decoration: none;
+    transition: background .2s ease;
+  }
+  .contact-icon-btn:hover { background: var(--outline); }
   .segment { display: flex; background: var(--surface-variant); border-radius: 12px; padding: 4px; margin-bottom: 16px; }
   .segment button {
     flex: 1;
@@ -291,6 +304,18 @@
       <input type="number" id="distance" placeholder="1.6" step="0.1">
     </div>
     <button class="primary" id="btnContinue" disabled>Продолжить</button>
+
+    <div class="card" style="margin-top:16px; text-align:center;">
+      <p class="muted" style="margin:0 0 10px;">Нашли проблему или есть предложение?</p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <a href="mailto:vysockiy.mark98@mail.ru?subject=StepBeat%20Go%20—%20сообщение" class="contact-icon-btn" title="Написать на почту" aria-label="Написать на почту">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="4" width="20" height="16" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 6.5L12 13L21 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="https://vk.ru/id680365854" target="_blank" rel="noopener" class="contact-icon-btn" title="Написать ВКонтакте" aria-label="Написать ВКонтакте">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.4 17.3c-5.7 0-9-4-9.1-10.5h2.9c.1 4.8 2.1 6.8 3.7 7.2v-7.2h2.7v4.1c1.6-.2 3.3-2 3.9-4.1h2.6c-.5 2.6-2.3 4.4-3.6 5.1 1.3.6 3.4 2.2 4.2 5h-3c-.6-1.9-2.1-3.4-4.1-3.6v3.6h-.32z" fill="currentColor"/></svg>
+        </a>
+      </div>
+    </div>
   </section>
 
   <!-- SAVED ROUTES (own tab) -->

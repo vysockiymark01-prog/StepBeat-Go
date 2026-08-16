@@ -16,25 +16,121 @@
   }
   h1 { color: #6E5AF0; }
   h2 { margin-top: 32px; }
+  .lang-switch { margin-bottom: 24px; }
+  .lang-switch a { color: #6E5AF0; text-decoration: none; font-weight: 600; }
+  .lang-switch a:hover { text-decoration: underline; }
+  .contact-links { display: flex; gap: 12px; margin-top: 8px; }
+  .contact-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #F0EFF4;
+    color: #1A1A1E;
+    text-decoration: none;
+    font-size: 14px;
+  }
+  .contact-links a:hover { background: #E2E1E8; }
+  hr { border: none; border-top: 1px solid #E2E1E8; margin: 48px 0; }
+  #en { display: none; }
 </style>
 </head>
 <body>
-  <h1>Политика конфиденциальности StepBeat Go</h1>
-  <p>Дата последнего обновления: 11 августа 2026 г.</p>
 
-  <h2>Какие данные собирает приложение</h2>
-  <p>StepBeat Go не собирает, не хранит на серверах и не передаёт третьим лицам никакие персональные данные пользователей. Приложение не использует аналитику, рекламные идентификаторы и не подключается к каким-либо внешним API или серверам.</p>
+  <div class="lang-switch">
+    <a href="#" id="toRu">Русский</a> · <a href="#" id="toEn">English</a>
+  </div>
 
-  <h2>Как работает приложение</h2>
-  <p>Все расчёты (темп, время в пути, синхронизация с музыкой) выполняются полностью на устройстве пользователя. Введённые данные — маршруты, плейлисты, история расчётов — сохраняются только локально, в памяти браузера/приложения на устройстве, и не покидают его.</p>
+  <div id="ru">
+    <h1>Политика конфиденциальности StepBeat Go</h1>
+    <p>Дата последнего обновления: 12 августа 2026 г.</p>
 
-  <h2>Разрешения</h2>
-  <p>Приложение не запрашивает доступ к геолокации, камере, микрофону, контактам или другим чувствительным данным устройства.</p>
+    <h2>Какие данные собирает приложение</h2>
+    <p>StepBeat Go не собирает, не хранит на серверах и не передаёт третьим лицам никакие персональные данные пользователей. Приложение не использует аналитику, рекламные идентификаторы и не подключается к каким-либо внешним API или серверам.</p>
 
-  <h2>Изменения политики</h2>
-  <p>Если политика конфиденциальности изменится, обновлённая версия будет опубликована на этой странице.</p>
+    <h2>Как работает приложение</h2>
+    <p>Все расчёты (темп, время в пути, синхронизация с музыкой) выполняются полностью на устройстве пользователя. Введённые данные — маршруты, плейлисты, история расчётов — сохраняются только локально, на самом устройстве, и не покидают его.</p>
 
-  <h2>Контакты</h2>
-  <p>По вопросам, связанным с этой политикой, можно написать на почту разработчика: vysockiymark01@gmail.com</p>
+    <h2>Экспорт и удаление данных</h2>
+    <p>В приложении есть встроенная функция «Резервная копия» для ручного экспорта и импорта своих данных. Чтобы полностью удалить все данные приложения, достаточно очистить данные приложения в настройках устройства (Настройки → Приложения → StepBeat Go → Хранилище → Очистить данные) — поскольку ничего не хранится на серверах, это удаляет данные безвозвратно.</p>
+
+    <h2>Реклама и аналитика</h2>
+    <p>Приложение не показывает рекламу и не использует сервисы аналитики или трекинга.</p>
+
+    <h2>Разрешения</h2>
+    <p>Приложение не запрашивает доступ к геолокации, камере, микрофону, контактам или другим чувствительным данным устройства.</p>
+
+    <h2 id="child-safety">Стандарты безопасности детей</h2>
+    <p>StepBeat Go придерживается нулевой терпимости к сексуальной эксплуатации и сексуальному насилию над детьми (CSAE) в любом виде.</p>
+    <p>Приложение не содержит функций общения между пользователями, чатов, публикации контента другими людьми или иных социальных возможностей — это личный инструмент-калькулятор, работающий полностью на устройстве пользователя.</p>
+    <p>Сообщить о любой проблеме, в том числе связанной с безопасностью детей, можно напрямую разработчику, не выходя из приложения (раздел «Настройки» → «Сообщить о проблеме»), либо по контактам ниже.</p>
+    <div class="contact-links">
+      <a href="mailto:vysockiy.mark98@mail.ru?subject=StepBeat%20Go%20—%20сообщение">✉️ vysockiy.mark98@mail.ru</a>
+      <a href="https://vk.ru/id680365854" target="_blank" rel="noopener">VK — написать разработчику</a>
+    </div>
+
+    <h2>Изменения политики</h2>
+    <p>Если политика конфиденциальности изменится, обновлённая версия будет опубликована на этой странице.</p>
+
+    <h2>Контакты</h2>
+    <p>По любым вопросам, связанным с приложением или этой политикой:</p>
+    <div class="contact-links">
+      <a href="mailto:vysockiy.mark98@mail.ru">✉️ vysockiy.mark98@mail.ru</a>
+      <a href="https://vk.ru/id680365854" target="_blank" rel="noopener">VK</a>
+    </div>
+  </div>
+
+  <div id="en">
+    <h1>StepBeat Go Privacy Policy</h1>
+    <p>Last updated: August 12, 2026</p>
+
+    <h2>What data the app collects</h2>
+    <p>StepBeat Go does not collect, store on servers, or share any personal data with third parties. The app does not use analytics, advertising identifiers, and does not connect to any external APIs or servers.</p>
+
+    <h2>How the app works</h2>
+    <p>All calculations (tempo, travel time, music sync) run entirely on the user's device. Entered data — routes, playlists, calculation history — is stored only locally on the device and never leaves it.</p>
+
+    <h2>Data export and deletion</h2>
+    <p>The app has a built-in "Backup" feature for manually exporting and importing your data. To fully delete all app data, simply clear the app's data in your device settings (Settings → Apps → StepBeat Go → Storage → Clear data) — since nothing is stored on servers, this permanently deletes it.</p>
+
+    <h2>Advertising and analytics</h2>
+    <p>The app displays no ads and uses no analytics or tracking services.</p>
+
+    <h2>Permissions</h2>
+    <p>The app does not request access to location, camera, microphone, contacts, or other sensitive device data.</p>
+
+    <h2 id="child-safety-en">Child Safety Standards</h2>
+    <p>StepBeat Go maintains a zero-tolerance policy toward child sexual abuse and exploitation (CSAE) in any form.</p>
+    <p>The app has no user-to-user communication features, chats, user-generated content shared with others, or any social functionality — it is a personal calculator tool that runs entirely on the user's own device.</p>
+    <p>Any issue, including one related to child safety, can be reported directly to the developer without leaving the app (Settings → "Report a problem"), or via the contacts below.</p>
+    <div class="contact-links">
+      <a href="mailto:vysockiy.mark98@mail.ru?subject=StepBeat%20Go%20report">✉️ vysockiy.mark98@mail.ru</a>
+      <a href="https://vk.ru/id680365854" target="_blank" rel="noopener">VK — contact developer</a>
+    </div>
+
+    <h2>Changes to this policy</h2>
+    <p>If this privacy policy changes, the updated version will be published on this page.</p>
+
+    <h2>Contact</h2>
+    <p>For any questions about the app or this policy:</p>
+    <div class="contact-links">
+      <a href="mailto:vysockiy.mark98@mail.ru">✉️ vysockiy.mark98@mail.ru</a>
+      <a href="https://vk.ru/id680365854" target="_blank" rel="noopener">VK</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("toEn").onclick = (e) => {
+      e.preventDefault();
+      document.getElementById("ru").style.display = "none";
+      document.getElementById("en").style.display = "block";
+    };
+    document.getElementById("toRu").onclick = (e) => {
+      e.preventDefault();
+      document.getElementById("en").style.display = "none";
+      document.getElementById("ru").style.display = "block";
+    };
+  </script>
 </body>
 </html>
