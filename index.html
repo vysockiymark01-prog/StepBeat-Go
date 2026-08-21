@@ -235,6 +235,22 @@
     transition: opacity .3s ease;
   }
   .toast.hidden { opacity: 0; pointer-events: none; }
+  .offline-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #6E5AF0;
+    color: #fff;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    z-index: 1001;
+    transform: translateY(0);
+    transition: transform .3s ease;
+  }
+  .offline-banner.hidden { transform: translateY(-100%); }
   .route-chip-add {
     background: transparent;
     border: 1px dashed var(--outline);
@@ -519,6 +535,7 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+<div id="offlineBanner" class="offline-banner hidden">📴 Нет связи — приложение считает офлайн, всё работает как обычно</div>
 
 <script>
 const GENRES = [
@@ -1592,6 +1609,17 @@ if ("serviceWorker" in navigator && location.protocol !== "file:") {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
+
+// ---- offline indicator: quick reassurance that the app still works with
+// zero connection (all math runs on-device), not that it's broken/frozen ----
+function updateOfflineBanner() {
+  const el = document.getElementById("offlineBanner");
+  if (!el) return;
+  el.classList.toggle("hidden", navigator.onLine);
+}
+window.addEventListener("online", updateOfflineBanner);
+window.addEventListener("offline", updateOfflineBanner);
+updateOfflineBanner();
 </script>
 </body>
 </html>
